@@ -1,0 +1,124 @@
+import './index.css'
+
+const products = [
+  { id: 1, image: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1887', name: 'Silk Wrap Dress', price: 220, category: 'Dresses', tag: 'Bestseller', description: 'Flowing silk wrap dress with adjustable tie. Perfect for day to night transitions. Ethically sourced from Ghanaian artisans.' },
+  { id: 2, image: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?q=80&w=1974', name: 'Kente Blazer Set', price: 340, category: 'Sets', tag: 'New', description: 'Modern Kente print blazer with matching wide-leg trousers. Power dressing redefined.' },
+  { id: 3, image: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?q=80&w=2080', name: 'Glow Facial Package', price: 85, category: 'Beauty', description: '60-minute deep cleanse facial with dermaplaning and LED therapy. Leave with glass skin.' },
+  { id: 4, image: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?q=80&w=2070', name: 'Braided Crown Style', price: 120, category: 'Hair', tag: 'Trending', description: 'Intricate braided crown with gold cuffs. Lasts 6-8 weeks with proper care.' },
+  { id: 5, image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=2070', name: 'Evening Gown', price: 450, category: 'Dresses', description: 'Floor-length silk gown with thigh slit. Red carpet approved.' },
+  { id: 6, image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1920', name: 'Ankara Jumpsuit', price: 180, category: 'Sets', tag: 'Limited', description: 'Bold Ankara print jumpsuit with wide legs and cinched waist.' },
+  { id: 7, image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070', name: 'Bridal Glam Package', price: 300, category: 'Beauty', description: 'Full bridal makeup + hair styling. Includes trial session.' },
+  { id: 8, image: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?q=80&w=2070', name: 'Acrylic Nail Set', price: 60, category: 'Beauty', description: 'Custom acrylic set with nail art. 3-week guarantee.' },
+]
+
+const services = [
+  { id: 1, icon: '✦', title: 'Hair Styling', description: 'Braids, silk press, frontal installs, and custom wigs. Our stylists specialize in natural and protective styles.', price: 80, duration: '2-4 hrs', image: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?q=80&w=2069' },
+  { id: 2, icon: '◌', title: 'Makeup Artistry', description: 'Soft glam, bridal, editorial looks. Using premium products for melanin-rich skin tones.', price: 60, duration: '45-90 min', image: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?q=80&w=2080' },
+  { id: 3, icon: '◇', title: 'Personal Styling', description: '1-on-1 wardrobe consultation, personal shopping, and event styling. Find your signature look.', price: 150, duration: '2 hrs', image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070' },
+  { id: 4, icon: '✧', title: 'Facial Treatments', description: 'Deep cleanse, dermaplaning, and glow facials. Customized for your skin type and concerns.', price: 85, duration: '60 min', image: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?q=80&w=2070' },
+  { id: 5, icon: '○', title: 'Nail Artistry', description: 'Acrylics, gel, and intricate designs. We are obsessed with detail and long-lasting sets.', price: 40, duration: '1-2 hrs', image: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?q=80&w=2070' },
+  { id: 6, icon: '▧', title: 'Full Glam Package', description: 'Hair + makeup + styling for photoshoots, weddings, and special events. Red carpet ready.', price: 350, duration: '4-5 hrs', image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=2070' },
+]
+
+const looks = [
+  { image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1920', title: 'Urban Goddess', description: 'Ankara meets streetwear' },
+  { image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070', title: 'Minimal Muse', description: 'Clean lines, bold energy' },
+  { image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=2070', title: 'Evening Royale', description: 'Silk and statement jewelry' },
+]
+
+const cartStorageKey = 'berrys-closet-cart'
+const savedCart = localStorage.getItem(cartStorageKey) || localStorage.getItem('aura-cart') || '[]'
+
+const state = {
+  cart: JSON.parse(savedCart),
+  theme: localStorage.getItem('theme') || 'dark',
+  lookIndex: 0,
+  product: null,
+  service: null,
+  modal: null,
+  checkout: false,
+}
+
+const money = value => `GHS${Number(value).toFixed(2)}`
+const escapeHtml = value => String(value).replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[character]))
+const saveCart = () => localStorage.setItem(cartStorageKey, JSON.stringify(state.cart))
+const cartTotal = () => state.cart.reduce((total, item) => total + item.price * item.quantity, 0)
+const cartCount = () => state.cart.reduce((total, item) => total + item.quantity, 0)
+
+function productCards() {
+  return products.map(product => `
+    <article class="product-card" data-product="${product.id}">
+      <div class="product-image"><img src="${product.image}" alt="${escapeHtml(product.name)}" loading="lazy">${product.tag ? `<span class="tag">${product.tag}</span>` : ''}</div>
+      <div class="product-copy"><span class="eyebrow">${product.category}</span><h3>${product.name}</h3><strong>${money(product.price)}</strong></div>
+    </article>`).join('')
+}
+
+function renderApp() {
+  document.documentElement.className = state.theme
+  document.querySelector('#app').innerHTML = `
+    <header class="site-header" id="site-header"><a class="brand" href="#top">Berry's <span>Closet</span></a><nav><a href="#collections">Collections</a><a href="#lookbook">Lookbook</a><a href="#services">Services</a><a href="#consultation">Consultation</a></nav><div class="header-actions"><button class="icon-button" data-action="theme" aria-label="Toggle theme">${state.theme === 'dark' ? '☼' : '◐'}</button><button class="cart-button" data-action="cart" aria-label="Open cart">Bag <b id="cart-count">${cartCount()}</b></button></div></header>
+    <main id="top">
+      <section class="hero"><img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070" alt="Fashion editorial"><div class="hero-shade"></div><div class="hero-copy"><span class="eyebrow">New season / Accra</span><h1>Define your<br><em>signature look.</em></h1><p>Curated pieces and bespoke styling for the modern muse. Accra to the world.</p><div class="button-row"><a class="button button-accent" href="#collections">Shop collection</a><a class="button button-line" href="#consultation">Book consultation</a></div></div></section>
+      <section class="section collections" id="collections"><div class="section-heading"><div><span class="eyebrow">The edit / 08 pieces</span><h2>Collections</h2></div><div class="scroll-actions"><button class="icon-button" data-action="scroll-products" data-direction="left" aria-label="Scroll products left">←</button><button class="icon-button" data-action="scroll-products" data-direction="right" aria-label="Scroll products right">→</button></div></div><div class="product-track" id="product-track">${productCards()}</div></section>
+      <section class="section lookbook" id="lookbook"><div class="section-heading center"><div><span class="eyebrow">A visual diary</span><h2>Lookbook</h2></div></div><div class="lookbook-frame"><img id="lookbook-image" src="${looks[0].image}" alt="${looks[0].title}"><div class="lookbook-shade"></div><div class="lookbook-copy"><span class="eyebrow">0${state.lookIndex + 1} / 0${looks.length}</span><h3 id="lookbook-title">${looks[0].title}</h3><p id="lookbook-description">${looks[0].description}</p></div><button class="carousel-button prev" data-action="look-prev" aria-label="Previous look">←</button><button class="carousel-button next" data-action="look-next" aria-label="Next look">→</button></div></section>
+      <section class="section services" id="services"><div class="section-heading center"><div><span class="eyebrow">What we do</span><h2>Rituals of beauty</h2><p>From everyday glow-ups to special occasions, we make your getting-ready ritual feel like an event.</p></div></div><div class="service-grid">${services.map(service => `<article class="service-card"><div class="service-image"><img src="${service.image}" alt="${service.title}" loading="lazy"><span>${service.icon}</span></div><div class="service-copy"><h3>${service.title}</h3><p>${service.description}</p><div class="service-meta"><strong>From ${money(service.price)}</strong><span>${service.duration}</span></div><button class="button button-dark" data-service="${service.id}">Book now</button></div></article>`).join('')}</div></section>
+      <section class="section consultation" id="consultation"><div class="consultation-panel"><span class="eyebrow">Exclusive / GHS 100</span><h2>Before you book.</h2><p class="intro">A considered conversation makes every final look feel unmistakably yours.</p><div class="detail-list"><div><b>01</b><span><strong>Consultation fee</strong>30-minute session with a dedicated consultant.</span></div><div><b>02</b><span><strong>Booking timeline</strong>Book 3–6 months or up to 1 year before your event.</span></div><div><b>03</b><span><strong>Style preparation</strong>Bring your inspiration. We will bring the edit.</span></div></div><button class="button button-accent" data-action="consultation">Book consultation</button></div></section>
+      <section class="newsletter"><div><span class="eyebrow">The Berry's list</span><h2>Good things, selectively sent.</h2><p>First access to drops, styling tips, and exclusive events in Accra.</p></div><form id="newsletter-form"><input type="email" name="email" placeholder="Your email address" required><button class="button button-dark">Subscribe</button></form></section>
+    </main>
+    <footer><div><a class="brand" href="#top">Berry's <span>Closet</span></a><p>Accra-based. Global style.</p></div><div><b>Explore</b><a href="#collections">Collections</a><a href="#services">Services</a><a href="#consultation">Consultation</a></div><div><b>Connect</b><a href="#">Instagram</a><a href="#">TikTok</a><a href="#">WhatsApp</a></div><small>© 2026 Berry's Closet. All rights reserved.</small></footer>
+    <div id="modal-root"></div>
+  `
+  updateCartCount()
+}
+
+function updateCartCount() { document.querySelector('#cart-count').textContent = cartCount() }
+function openModal(content, className = '') { document.querySelector('#modal-root').innerHTML = `<div class="modal-backdrop" data-action="close-modal"></div><div class="modal ${className}">${content}</div>`; document.body.classList.add('modal-open') }
+function closeModal() { document.querySelector('#modal-root').innerHTML = ''; document.body.classList.remove('modal-open'); state.modal = null }
+function addToCart(product) { state.cart.push({ ...product, cartItemId: crypto.randomUUID(), quantity: 1 }); saveCart(); updateCartCount(); closeModal(); notify(`${product.name} added to your bag.`) }
+function notify(message) { const note = document.createElement('div'); note.className = 'toast'; note.textContent = message; document.body.append(note); setTimeout(() => note.remove(), 2800) }
+
+function showProduct(product) { state.modal = 'product'; openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="product-modal"><img src="${product.image}" alt="${product.name}"><div class="modal-content"><span class="eyebrow">${product.category}</span><h2>${product.name}</h2><strong class="price">${money(product.price)}</strong><p>${product.description}</p><div class="specs"><span><small>Material</small>Premium silk</span><span><small>Fit</small>True to size</span></div><button class="button button-accent" data-add-product="${product.id}">Add to bag</button></div></div>`, 'wide-modal') }
+function showService(service) { state.modal = 'service'; openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="modal-content"><span class="eyebrow">${service.title} / ${money(service.price)}</span><h2>Reserve your session.</h2><p>${service.description}</p><form class="booking-form" data-form="service"><input name="name" placeholder="Full name" required><input name="email" type="email" placeholder="Email" required><input name="phone" placeholder="Phone" required><input name="date" type="date" required><select name="time" required><option value="">Preferred time</option><option>9:00 AM</option><option>11:00 AM</option><option>1:00 PM</option><option>3:00 PM</option><option>5:00 PM</option></select><button class="button button-accent">Request booking</button></form></div>`) }
+function showConsultation() { openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="modal-content"><span class="eyebrow">Style consultation / GHS 100</span><h2>Let’s make a plan.</h2><p>Tell us where you are going and we will shape the look around you.</p><form class="booking-form" data-form="consultation"><input name="name" placeholder="Full name" required><input name="email" type="email" placeholder="Email" required><input name="phone" placeholder="Phone" required><input name="date" type="date" required><button class="button button-accent">Request consultation</button></form></div>`) }
+
+function showCart() { state.modal = 'cart'; const items = state.cart.map(item => `<div class="cart-item"><img src="${item.image}" alt="${item.name}"><div><strong>${item.name}</strong><small>${money(item.price)} / ${item.category}</small><div class="quantity"><button data-quantity="${item.cartItemId}" data-change="-1">−</button><span>${item.quantity}</span><button data-quantity="${item.cartItemId}" data-change="1">+</button></div></div><button class="remove" data-remove="${item.cartItemId}">Remove</button></div>`).join(''); openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="modal-content cart-modal"><span class="eyebrow">Your selection / ${cartCount()} items</span><h2>Shopping bag.</h2>${items || '<div class="empty">Your bag is waiting for something special.</div>'}${items ? `<div class="cart-total"><span>Subtotal</span><strong>${money(cartTotal())}</strong></div><button class="button button-accent" data-action="checkout">Checkout</button>` : ''}</div>`,'cart-modal-shell') }
+function showCheckout() { openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="modal-content"><span class="eyebrow">Secure checkout</span><h2>Almost yours.</h2><form class="booking-form" data-form="checkout"><input name="name" placeholder="Full name" required><input name="email" type="email" placeholder="Email" required><input name="phone" placeholder="Phone" required><input name="address" placeholder="Delivery address" required><button class="button button-accent">Place order · ${money(cartTotal())}</button></form></div>`) }
+
+async function postOrder(endpoint, payload) { const response = await fetch(`/api/order/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return response.json() }
+
+function changeLook(direction) { state.lookIndex = (state.lookIndex + direction + looks.length) % looks.length; const look = looks[state.lookIndex]; document.querySelector('#lookbook-image').src = look.image; document.querySelector('#lookbook-image').alt = look.title; document.querySelector('#lookbook-title').textContent = look.title; document.querySelector('#lookbook-description').textContent = look.description; document.querySelector('.lookbook-copy .eyebrow').textContent = `0${state.lookIndex + 1} / 0${looks.length}` }
+
+document.addEventListener('click', event => {
+  const action = event.target.closest('[data-action]')?.dataset.action
+  const productId = event.target.closest('[data-product]')?.dataset.product
+  if (productId) showProduct(products.find(product => product.id === Number(productId)))
+  if (event.target.closest('[data-add-product]')) addToCart(products.find(product => product.id === Number(event.target.closest('[data-add-product]').dataset.addProduct)))
+  if (event.target.closest('[data-service]')) showService(services.find(service => service.id === Number(event.target.closest('[data-service]').dataset.service)))
+  if (event.target.closest('[data-quantity]')) { const button = event.target.closest('[data-quantity]'); const item = state.cart.find(entry => entry.cartItemId === button.dataset.quantity); item.quantity += Number(button.dataset.change); if (item.quantity < 1) state.cart = state.cart.filter(entry => entry.cartItemId !== item.cartItemId); saveCart(); showCart(); updateCartCount() }
+  if (event.target.closest('[data-remove]')) { state.cart = state.cart.filter(item => item.cartItemId !== event.target.closest('[data-remove]').dataset.remove); saveCart(); showCart(); updateCartCount() }
+  if (action === 'theme') { state.theme = state.theme === 'dark' ? 'light' : 'dark'; localStorage.setItem('theme', state.theme); renderApp() }
+  if (action === 'cart') showCart()
+  if (action === 'close-modal') closeModal()
+  if (action === 'look-prev') changeLook(-1)
+  if (action === 'look-next') changeLook(1)
+  if (action === 'consultation') showConsultation()
+  if (action === 'checkout') showCheckout()
+  if (action === 'scroll-products') document.querySelector('#product-track').scrollBy({ left: event.target.closest('[data-direction]').dataset.direction === 'left' ? -340 : 340, behavior: 'smooth' })
+})
+
+document.addEventListener('submit', async event => {
+  const form = event.target
+  if (form.id === 'newsletter-form') { event.preventDefault(); form.reset(); notify("Welcome to Berry's Closet."); return }
+  if (!form.matches('[data-form]')) return
+  event.preventDefault()
+  const data = Object.fromEntries(new FormData(form))
+  try {
+    if (form.dataset.form === 'checkout') { await postOrder('create-order', { orderData: { customer: data, items: state.cart, total: cartTotal(), status: 'pending' } }); state.cart = []; saveCart(); updateCartCount() }
+    if (form.dataset.form === 'service') await postOrder('create-orderA', { formData: data })
+    if (form.dataset.form === 'consultation') await postOrder('consult', { orderData: { customer: data, items: [{ id: 'consultation', name: 'Style Consultation', price: 100, quantity: 1, category: 'Service' }], total: 100, status: 'pending', type: 'consultation' } })
+    closeModal(); notify('Thank you. We will be in touch shortly.')
+  } catch (error) { console.error(error); closeModal(); notify('Request saved. We will contact you shortly.') }
+})
+
+renderApp()
+window.addEventListener('scroll', () => document.querySelector('#site-header')?.classList.toggle('scrolled', window.scrollY > 24))
