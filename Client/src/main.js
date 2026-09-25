@@ -83,7 +83,7 @@ function renderNav(currentRoute = getCurrentRoute()) {
   const navItems = [
     { href: '#/', label: 'Home', slug: 'home' },
     ...categoryMeta.map(category => ({ href: `#/${category.slug}`, label: category.label, slug: category.slug })),
-    { href: '#consultation', label: 'Consultation', slug: 'consultation' },
+    { href: '#consultation', label: 'Item Request', slug: 'consultation' },
   ]
 
   return `
@@ -94,7 +94,10 @@ function renderNav(currentRoute = getCurrentRoute()) {
       </nav>
       <div class="header-actions">
         <button class="icon-button" data-action="theme" aria-label="Toggle theme">${state.theme === 'dark' ? '☼' : '◐'}</button>
-        <button class="cart-button" data-action="cart" aria-label="Open cart">Bag <b id="cart-count">${cartCount()}</b></button>
+        <button class="cart-button" data-action="cart" aria-label="Open shopping cart">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h2l2.3 9.1a1 1 0 0 0 1 .8h8.6a1 1 0 0 0 1-.8L20 7H7"/><circle cx="10" cy="18.5" r="1.2"/><circle cx="17" cy="18.5" r="1.2"/></svg>
+          <b id="cart-count">${cartCount()}</b>
+        </button>
       </div>
     </header>
   `
@@ -104,14 +107,79 @@ function renderHomePage() {
   return `
     ${renderNav('home')}
     <main id="top">
-      <section class="hero"><img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070" alt="Fashion editorial"><div class="hero-shade"></div><div class="hero-copy"><span class="eyebrow">New season / Accra</span><h1>Define your<br><em>signature look.</em></h1><p>Curated pieces and bespoke styling for the modern muse. Accra to the world.</p><div class="button-row"><a class="button button-accent" href="#/womens-wear">Shop collections</a><a class="button button-line" href="#consultation">Book consultation</a></div></div></section>
+      <section class="hero"><img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070" alt="Fashion editorial"><div class="hero-shade"></div><div class="hero-copy"><span class="eyebrow">New season / Accra</span><h1>Define your<br><em>signature look.</em></h1><p>Curated pieces and bespoke styling for the modern muse. Accra to the world.</p><div class="button-row"><a class="button button-accent" href="#/womens-wear">Shop collections</a><a class="button button-line" href="#consultation">Item request</a></div></div></section>
       <section class="section collections" id="collections"><div class="section-heading"><div><span class="eyebrow">The edit / 20 pieces</span><h2>Collections</h2></div><div class="scroll-actions"><button class="icon-button" data-action="scroll-products" data-direction="left" aria-label="Scroll products left">←</button><button class="icon-button" data-action="scroll-products" data-direction="right" aria-label="Scroll products right">→</button></div></div><div class="product-track" id="product-track">${productCards()}</div></section>
       <section class="section lookbook" id="lookbook"><div class="section-heading center"><div><span class="eyebrow">A visual diary</span><h2>Lookbook</h2></div></div><div class="lookbook-frame"><img id="lookbook-image" src="${looks[0].image}" alt="${looks[0].title}"><div class="lookbook-shade"></div><div class="lookbook-copy"><span class="eyebrow">0${state.lookIndex + 1} / 0${looks.length}</span><h3 id="lookbook-title">${looks[0].title}</h3><p id="lookbook-description">${looks[0].description}</p></div><button class="carousel-button prev" data-action="look-prev" aria-label="Previous look">←</button><button class="carousel-button next" data-action="look-next" aria-label="Next look">→</button></div></section>
       <section class="section services" id="services"><div class="section-heading center"><div><span class="eyebrow">What we do</span><h2>Rituals of beauty</h2><p>From everyday glow-ups to special occasions, we make your getting-ready ritual feel like an event.</p></div></div><div class="service-grid">${services.map(service => `<article class="service-card"><div class="service-image"><img src="${service.image}" alt="${service.title}" loading="lazy"><span>${service.icon}</span></div><div class="service-copy"><h3>${service.title}</h3><p>${service.description}</p><div class="service-meta"><strong>From ${money(service.price)}</strong><span>${service.duration}</span></div><button class="button button-dark" data-service="${service.id}">Book now</button></div></article>`).join('')}</div></section>
-      <section class="section consultation" id="consultation"><div class="consultation-panel"><span class="eyebrow">Exclusive / GHS 100</span><h2>Before you book.</h2><p class="intro">A considered conversation makes every final look feel unmistakably yours.</p><div class="detail-list"><div><b>01</b><span><strong>Consultation fee</strong>30-minute session with a dedicated consultant.</span></div><div><b>02</b><span><strong>Booking timeline</strong>Book 3–6 months or up to 1 year before your event.</span></div><div><b>03</b><span><strong>Style preparation</strong>Bring your inspiration. We will bring the edit.</span></div></div><button class="button button-accent" data-action="consultation">Book consultation</button></div></section>
+      <section class="section consultation" id="consultation"><div class="consultation-panel"><span class="eyebrow">Item request</span><h2>Request an item</h2><p class="intro">Share the item you want and attach a photo so we know exactly what you need.</p><div class="detail-list"><div><b>01</b><span><strong>Your name</strong>Tell us who the request is from.</span></div><div><b>02</b><span><strong>Product name</strong>Write the exact item name or description.</span></div><div><b>03</b><span><strong>Image upload</strong>Upload a clear photo of the item for reference.</span></div></div><button class="button button-accent" data-action="consultation">Submit request</button></div></section>
       <section class="newsletter"><div><span class="eyebrow">The Berry's list</span><h2>Good things, selectively sent.</h2><p>First access to drops, styling tips, and exclusive events in Accra.</p></div><form id="newsletter-form"><input type="email" name="email" placeholder="Your email address" required><button class="button button-dark">Subscribe</button></form></section>
     </main>
-    <footer><div><a class="brand" href="#top">Berry's <span>Closet</span></a><p>Accra-based. Global style.</p></div><div><b>Explore</b><a href="#/womens-wear">Women's Wear</a><a href="#/mens-wear">Men's Wear</a><a href="#/cosmetics">Cosmetics</a></div><div><b>Explore</b><a href="#/food">Food</a><a href="#/gadgets">Gadgets</a><a href="#consultation">Consultation</a></div><small>© 2026 Berry's Closet. All rights reserved.</small></footer>
+    <footer>
+      <div><a class="brand" href="#top">Berry's <span>Closet</span></a><p>Accra-based. Global style.</p></div>
+      <div><b>Shop</b><a href="#/womens-wear">Women's Wear</a><a href="#/mens-wear">Men's Wear</a><a href="#/cosmetics">Cosmetics</a></div>
+      <div><b>More</b><a href="#/food">Food</a><a href="#/gadgets">Gadgets</a><a href="#consultation">Item Request</a></div>
+      <small>© 2026 Berry's Closet. All rights reserved.</small>
+    </footer>
+    <div id="modal-root"></div>
+  `
+}
+
+function renderCartPage() {
+  const items = state.cart
+
+  return `
+    ${renderNav('cart')}
+    <main class="cart-page" id="top">
+      <div class="cart-shell">
+        <div class="section-heading cart-header">
+          <div>
+            <span class="eyebrow">Your basket</span>
+            <h2>Shopping cart</h2>
+          </div>
+        </div>
+
+        <div class="cart-grid">
+          <section class="cart-items-panel">
+            ${items.length ? items.map(item => `
+              <article class="cart-page-item">
+                <img src="${item.image}" alt="${item.name}">
+                <div class="cart-page-copy">
+                  <div>
+                    <h3>${item.name}</h3>
+                    <p>${item.category}</p>
+                  </div>
+                  <strong>${money(item.price)}</strong>
+                </div>
+                <div class="cart-page-controls">
+                  <div class="quantity">
+                    <button data-quantity="${item.cartItemId}" data-change="-1">−</button>
+                    <span>${item.quantity}</span>
+                    <button data-quantity="${item.cartItemId}" data-change="1">+</button>
+                  </div>
+                  <button class="remove" data-remove="${item.cartItemId}">Remove</button>
+                </div>
+              </article>
+            `).join('') : `<div class="empty-cart"><p>Your cart is empty. Add a few items from the collection.</p><a class="button button-accent" href="#/womens-wear">Continue shopping</a></div>`}
+          </section>
+
+          <aside class="cart-summary">
+            <span class="eyebrow">Summary</span>
+            <h3>Order total</h3>
+            <div class="cart-total-row"><span>Subtotal</span><strong>${money(cartTotal())}</strong></div>
+            <div class="cart-total-row"><span>Delivery</span><strong>GHS0.00</strong></div>
+            <div class="cart-total-row total"><span>Total</span><strong>${money(cartTotal())}</strong></div>
+            <button class="button button-accent" data-action="checkout" ${items.length ? '' : 'disabled'}>Checkout</button>
+          </aside>
+        </div>
+      </div>
+    </main>
+
+    <footer>
+      <div><a class="brand" href="#top">Berry's <span>Closet</span></a><p>Accra-based. Global style.</p></div>
+      <div><b>Shop</b><a href="#/womens-wear">Women's Wear</a><a href="#/mens-wear">Men's Wear</a><a href="#/cosmetics">Cosmetics</a></div>
+      <div><b>More</b><a href="#/food">Food</a><a href="#/gadgets">Gadgets</a><a href="#consultation">Item Request</a></div>
+      <small>© 2026 Berry's Closet. All rights reserved.</small>
+    </footer>
     <div id="modal-root"></div>
   `
 }
@@ -130,7 +198,7 @@ function renderCategoryPage(slug) {
           <p>${category.blurb}</p>
           <div class="button-row">
             <a class="button button-accent" href="#collections">Browse ${category.label}</a>
-            <a class="button button-line" href="#consultation">Book a style call</a>
+            <a class="button button-line" href="#consultation">Item request</a>
           </div>
         </div>
       </section>
@@ -150,21 +218,39 @@ function renderCategoryPage(slug) {
         `).join('')}</div>
       </section>
     </main>
-    <footer><div><a class="brand" href="#top">Berry's <span>Closet</span></a><p>Accra-based. Global style.</p></div><div><b>Explore</b><a href="#/womens-wear">Women's Wear</a><a href="#/mens-wear">Men's Wear</a><a href="#/cosmetics">Cosmetics</a></div><div><b>Explore</b><a href="#/food">Food</a><a href="#/gadgets">Gadgets</a><a href="#consultation">Consultation</a></div><small>© 2026 Berry's Closet. All rights reserved.</small></footer>
+    <footer>
+      <div><a class="brand" href="#top">Berry's <span>Closet</span></a><p>Accra-based. Global style.</p></div>
+      <div><b>Shop</b><a href="#/womens-wear">Women's Wear</a><a href="#/mens-wear">Men's Wear</a><a href="#/cosmetics">Cosmetics</a></div>
+      <div><b>More</b><a href="#/food">Food</a><a href="#/gadgets">Gadgets</a><a href="#consultation">Item Request</a></div>
+      <small>© 2026 Berry's Closet. All rights reserved.</small>
+    </footer>
     <div id="modal-root"></div>
+  `
+}
+
+function renderItemRequestPage() {
+  return `
+    <main class="item-request-page">
+      <form class="booking-form item-request-form" data-form="consultation">
+        <input name="name" placeholder="Your full name" required>
+        <input name="productName" placeholder="Product name" required>
+        <input name="photo" type="file" accept="image/*" required>
+        <button class="button button-accent">Send request</button>
+      </form>
+    </main>
   `
 }
 
 function renderApp() {
   document.documentElement.className = state.theme
   const route = getCurrentRoute()
-  const page = route === 'home' || route === 'collections' || route === 'lookbook' || route === 'services' || route === 'consultation' ? 'home' : route
+  const page = route === 'home' || route === 'collections' || route === 'lookbook' || route === 'services' ? 'home' : route === 'consultation' ? 'item-request' : route === 'cart' ? 'cart' : route
 
-  document.querySelector('#app').innerHTML = page === 'home' ? renderHomePage() : renderCategoryPage(page)
+  document.querySelector('#app').innerHTML = page === 'home' ? renderHomePage() : page === 'cart' ? renderCartPage() : page === 'item-request' ? renderItemRequestPage() : renderCategoryPage(page)
   updateCartCount()
 }
 
-function updateCartCount() { document.querySelector('#cart-count').textContent = cartCount() }
+function updateCartCount() { const count = document.querySelector('#cart-count'); if (count) count.textContent = cartCount() }
 function openModal(content, className = '') { document.querySelector('#modal-root').innerHTML = `<div class="modal-backdrop" data-action="close-modal"></div><div class="modal ${className}">${content}</div>`; document.body.classList.add('modal-open') }
 function closeModal() { document.querySelector('#modal-root').innerHTML = ''; document.body.classList.remove('modal-open'); state.modal = null }
 function addToCart(product) { state.cart.push({ ...product, cartItemId: crypto.randomUUID(), quantity: 1 }); saveCart(); updateCartCount(); closeModal(); notify(`${product.name} added to your bag.`) }
@@ -172,7 +258,16 @@ function notify(message) { const note = document.createElement('div'); note.clas
 
 function showProduct(product) { state.modal = 'product'; openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="product-modal"><img src="${product.image}" alt="${product.name}"><div class="modal-content"><span class="eyebrow">${product.category}</span><h2>${product.name}</h2><strong class="price">${money(product.price)}</strong><p>${product.description}</p><div class="specs"><span><small>Material</small>Premium finish</span><span><small>Fit</small>Curated style</span></div><button class="button button-accent" data-add-product="${product.id}">Add to bag</button></div></div>`, 'wide-modal') }
 function showService(service) { state.modal = 'service'; openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="modal-content"><span class="eyebrow">${service.title} / ${money(service.price)}</span><h2>Reserve your session.</h2><p>${service.description}</p><form class="booking-form" data-form="service"><input name="name" placeholder="Full name" required><input name="email" type="email" placeholder="Email" required><input name="phone" placeholder="Phone" required><input name="date" type="date" required><select name="time" required><option value="">Preferred time</option><option>9:00 AM</option><option>11:00 AM</option><option>1:00 PM</option><option>3:00 PM</option><option>5:00 PM</option></select><button class="button button-accent">Request booking</button></form></div>`) }
-function showConsultation() { openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="modal-content"><span class="eyebrow">Style consultation / GHS 100</span><h2>Let’s make a plan.</h2><p>Tell us where you are going and we will shape the look around you.</p><form class="booking-form" data-form="consultation"><input name="name" placeholder="Full name" required><input name="email" type="email" placeholder="Email" required><input name="phone" placeholder="Phone" required><input name="date" type="date" required><button class="button button-accent">Request consultation</button></form></div>`) }
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(new Error('Could not read file'))
+    reader.readAsDataURL(file)
+  })
+}
+
+function showConsultation() { openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="modal-content"><span class="eyebrow">Product request</span><h2>Request an item.</h2><p>Share your name, the product you want, and a clear photo to help us find it.</p><form class="booking-form" data-form="consultation"><input name="name" placeholder="Your full name" required><input name="productName" placeholder="Product name" required><input name="photo" type="file" accept="image/*" required><button class="button button-accent">Send request</button></form></div>`) }
 
 function showCart() { state.modal = 'cart'; const items = state.cart.map(item => `<div class="cart-item"><img src="${item.image}" alt="${item.name}"><div><strong>${item.name}</strong><small>${money(item.price)} / ${item.category}</small><div class="quantity"><button data-quantity="${item.cartItemId}" data-change="-1">−</button><span>${item.quantity}</span><button data-quantity="${item.cartItemId}" data-change="1">+</button></div></div><button class="remove" data-remove="${item.cartItemId}">Remove</button></div>`).join(''); openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="modal-content cart-modal"><span class="eyebrow">Your selection / ${cartCount()} items</span><h2>Shopping bag.</h2>${items || '<div class="empty">Your bag is waiting for something special.</div>'}${items ? `<div class="cart-total"><span>Subtotal</span><strong>${money(cartTotal())}</strong></div><button class="button button-accent" data-action="checkout">Checkout</button>` : ''}</div>`,'cart-modal-shell') }
 function showCheckout() { openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="modal-content"><span class="eyebrow">Secure checkout</span><h2>Almost yours.</h2><form class="booking-form" data-form="checkout"><input name="name" placeholder="Full name" required><input name="email" type="email" placeholder="Email" required><input name="phone" placeholder="Phone" required><input name="address" placeholder="Delivery address" required><button class="button button-accent">Place order · ${money(cartTotal())}</button></form></div>`) }
@@ -198,13 +293,14 @@ document.addEventListener('click', event => {
 
   const action = event.target.closest('[data-action]')?.dataset.action
   const productId = event.target.closest('[data-product]')?.dataset.product
+  const isCartRoute = getCurrentRoute() === 'cart'
   if (productId) showProduct(products.find(product => product.id === Number(productId)))
   if (event.target.closest('[data-add-product]')) addToCart(products.find(product => product.id === Number(event.target.closest('[data-add-product]').dataset.addProduct)))
   if (event.target.closest('[data-service]')) showService(services.find(service => service.id === Number(event.target.closest('[data-service]').dataset.service)))
-  if (event.target.closest('[data-quantity]')) { const button = event.target.closest('[data-quantity]'); const item = state.cart.find(entry => entry.cartItemId === button.dataset.quantity); item.quantity += Number(button.dataset.change); if (item.quantity < 1) state.cart = state.cart.filter(entry => entry.cartItemId !== item.cartItemId); saveCart(); showCart(); updateCartCount() }
-  if (event.target.closest('[data-remove]')) { state.cart = state.cart.filter(item => item.cartItemId !== event.target.closest('[data-remove]').dataset.remove); saveCart(); showCart(); updateCartCount() }
+  if (event.target.closest('[data-quantity]')) { const button = event.target.closest('[data-quantity]'); const item = state.cart.find(entry => entry.cartItemId === button.dataset.quantity); item.quantity += Number(button.dataset.change); if (item.quantity < 1) state.cart = state.cart.filter(entry => entry.cartItemId !== item.cartItemId); saveCart(); if (isCartRoute) renderApp(); else showCart(); updateCartCount() }
+  if (event.target.closest('[data-remove]')) { state.cart = state.cart.filter(item => item.cartItemId !== event.target.closest('[data-remove]').dataset.remove); saveCart(); if (isCartRoute) renderApp(); else showCart(); updateCartCount() }
   if (action === 'theme') { state.theme = state.theme === 'dark' ? 'light' : 'dark'; localStorage.setItem('theme', state.theme); renderApp() }
-  if (action === 'cart') showCart()
+  if (action === 'cart') { window.location.hash = '#/cart'; renderApp() }
   if (action === 'close-modal') closeModal()
   if (action === 'look-prev') changeLook(-1)
   if (action === 'look-next') changeLook(1)
@@ -222,7 +318,23 @@ document.addEventListener('submit', async event => {
   try {
     if (form.dataset.form === 'checkout') { await postOrder('create-order', { orderData: { customer: data, items: state.cart, total: cartTotal(), status: 'pending' } }); state.cart = []; saveCart(); updateCartCount() }
     if (form.dataset.form === 'service') await postOrder('create-orderA', { formData: data })
-    if (form.dataset.form === 'consultation') await postOrder('consult', { orderData: { customer: data, items: [{ id: 'consultation', name: 'Style Consultation', price: 100, quantity: 1, category: 'Service' }], total: 100, status: 'pending', type: 'consultation' } })
+    if (form.dataset.form === 'consultation') {
+      const file = form.elements.photo?.files?.[0]
+      const photo = file ? await fileToDataUrl(file) : ''
+      const payload = {
+        orderData: {
+          customer: {
+            name: data.name,
+            email: 'request@berryscloset.com',
+            phone: 'Not provided',
+            date: new Date().toISOString(),
+            productName: data.productName,
+            photo,
+          },
+        },
+      }
+      await postOrder('consult', payload)
+    }
     closeModal(); notify('Thank you. We will be in touch shortly.')
   } catch (error) { console.error(error); closeModal(); notify('Request saved. We will contact you shortly.') }
 })

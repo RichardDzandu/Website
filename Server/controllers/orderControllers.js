@@ -22,17 +22,17 @@ export const createOrderA = async (req, res) => {
 
 export const createConsult = async (req, res) => {
   try {
-    const { name, email, phone, date } = req.body.orderData.customer;
+    const { name, email = 'request@berryscloset.com', phone = 'Not provided', date = new Date().toISOString(), productName, photo } = req.body.orderData.customer;
 
     // Validate required fields
-    if (!name || !email || !phone || !date) {
+    if (!name || !productName || !photo) {
       return res.status(400).json({ success: false, message: 'Missing Required Details' });
     }
 
-    const consult = new consultModel({name, email, phone, date});
+    const consult = new consultModel({ name, email, phone, date, productName, photo });
     await consult.save();
 
-    return res.json({ success: true, message: "Consultation successfully booked" });
+    return res.json({ success: true, message: "Product request successfully created" });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ success: false, message: error.message });
