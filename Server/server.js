@@ -10,6 +10,7 @@ import http from "http";
 import fs from "fs";
 import productRouter from "./routes/productRoutes.js";
 import orderRouter from "./routes/orderRoutes.js";
+import adminRouter from "./routes/adminRoutes.js";
 import { connect } from 'http2';
 
 //Create Express app and HTTP  server
@@ -32,6 +33,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/product', productRouter);
 app.use('/api/order', orderRouter);
+app.use('/api/admin', adminRouter);
 
 await connectDB();
 

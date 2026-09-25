@@ -57,6 +57,8 @@ const state = {
   service: null,
   modal: null,
   checkout: false,
+  adminNumber: '',
+  adminData: null,
 }
 
 const money = value => `GHS${Number(value).toFixed(2)}`
@@ -84,6 +86,7 @@ function renderNav(currentRoute = getCurrentRoute()) {
     { href: '#/', label: 'Home', slug: 'home' },
     ...categoryMeta.map(category => ({ href: `#/${category.slug}`, label: category.label, slug: category.slug })),
     { href: '#consultation', label: 'Item Request', slug: 'consultation' },
+    { href: '#/login', label: 'Account', slug: 'login' },
   ]
 
   return `
@@ -241,12 +244,69 @@ function renderItemRequestPage() {
   `
 }
 
+function renderAdminPage() {
+  if (state.adminData) return renderAdminDashboard(state.adminData)
+
+  const isCodeStep = Boolean(state.adminNumber)
+  return `
+    <main class="admin-page">
+      <section class="admin-panel">
+        <span class="eyebrow">Restricted access</span>
+        <h1>Admin portal</h1>
+        <p>${isCodeStep ? `Enter the code sent to ${state.adminNumber}.` : 'Enter an authorized mobile number to receive a verification code.'}</p>
+        <form class="admin-form" data-form="${isCodeStep ? 'admin-verify' : 'admin-request'}">
+          ${isCodeStep ? `<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="6-digit code" required>` : '<input name="number" type="tel" autocomplete="tel" placeholder="Mobile number" required>'}
+          <button class="button button-accent">${isCodeStep ? 'Verify code' : 'Send code'}</button>
+        </form>
+        ${isCodeStep ? '<button class="admin-secondary" data-action="admin-change-number">Use a different number</button>' : ''}
+        <p class="admin-message" id="admin-message" aria-live="polite"></p>
+      </section>
+    </main>
+  `
+}
+
+function renderAdminDashboard(data) {
+  const rows = [...data.itemRequests.map(item => ({ type: 'Item request', customer: item.name, item: item.productName, status: item.status, date: item.createdAt || item.date })), ...data.itemOrders.map(item => ({ type: 'Order', customer: item.customerName, item: item.itemName, status: item.status, date: item.createdAt })), ...data.serviceOrders.map(item => ({ type: 'Service', customer: item.clientName, item: item.serviceName, status: item.status, date: item.createdAt || item.date }))]
+  return `
+    <main class="admin-page admin-dashboard">
+      <section class="admin-panel admin-panel-wide">
+        <div class="admin-heading"><div><span class="eyebrow">Restricted access</span><h1>Admin dashboard</h1></div><button class="admin-secondary" data-action="admin-logout">Log out</button></div>
+        <div class="admin-stats"><div><strong>${data.itemRequests.length}</strong><span>Item requests</span></div><div><strong>${data.itemOrders.length}</strong><span>Orders</span></div><div><strong>${data.serviceOrders.length}</strong><span>Services</span></div></div>
+        <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Type</th><th>Customer</th><th>Request</th><th>Status</th><th>Date</th></tr></thead><tbody>${rows.length ? rows.map(row => `<tr><td>${row.type}</td><td>${escapeHtml(row.customer || 'Unknown')}</td><td>${escapeHtml(row.item || '')}</td><td>${escapeHtml(row.status || 'Pending')}</td><td>${row.date ? new Date(row.date).toLocaleDateString() : '-'}</td></tr>`).join('') : '<tr><td colspan="5">No records yet.</td></tr>'}</tbody></table></div>
+      </section>
+    </main>
+  `
+}
+
+function renderAuthPage(mode = 'login') {
+  const isLogin = mode === 'login'
+  return `
+    <main class="auth-page">
+      <section class="auth-panel">
+        <a class="brand" href="#/">Berry's <span>Closet</span></a>
+        <span class="eyebrow">Your account</span>
+        <h1>${isLogin ? 'Welcome back.' : 'Create your account.'}</h1>
+        <p>${isLogin ? 'Sign in to continue shopping.' : 'Join Berry’s Closet to keep your details ready for checkout.'}</p>
+        <form class="auth-form" data-form="${isLogin ? 'login' : 'signup'}">
+          ${isLogin ? '' : '<input name="name" placeholder="Full name" autocomplete="name" required>'}
+          ${isLogin ? '' : '<input name="number" type="tel" placeholder="Mobile number" autocomplete="tel" required>'}
+          <input name="email" type="email" placeholder="Email address" autocomplete="email" required>
+          <input name="password" type="password" placeholder="Password" autocomplete="${isLogin ? 'current-password' : 'new-password'}" minlength="8" required>
+          <button class="button button-accent">${isLogin ? 'Log in' : 'Sign up'}</button>
+        </form>
+        <p class="auth-message" id="auth-message" aria-live="polite"></p>
+        <a class="auth-switch" href="#/${isLogin ? 'signup' : 'login'}">${isLogin ? 'Need an account? Sign up' : 'Already have an account? Log in'}</a>
+      </section>
+    </main>
+  `
+}
+
 function renderApp() {
   document.documentElement.className = state.theme
   const route = getCurrentRoute()
-  const page = route === 'home' || route === 'collections' || route === 'lookbook' || route === 'services' ? 'home' : route === 'consultation' ? 'item-request' : route === 'cart' ? 'cart' : route
+  const page = route === 'home' || route === 'collections' || route === 'lookbook' || route === 'services' ? 'home' : route === 'consultation' ? 'item-request' : route === 'admin' ? 'admin' : route === 'login' || route === 'signup' ? route : route === 'cart' ? 'cart' : route
 
-  document.querySelector('#app').innerHTML = page === 'home' ? renderHomePage() : page === 'cart' ? renderCartPage() : page === 'item-request' ? renderItemRequestPage() : renderCategoryPage(page)
+  document.querySelector('#app').innerHTML = page === 'home' ? renderHomePage() : page === 'cart' ? renderCartPage() : page === 'item-request' ? renderItemRequestPage() : page === 'admin' ? renderAdminPage() : page === 'login' ? renderAuthPage('login') : page === 'signup' ? renderAuthPage('signup') : renderCategoryPage(page)
   updateCartCount()
 }
 
@@ -257,7 +317,7 @@ function addToCart(product) { state.cart.push({ ...product, cartItemId: crypto.r
 function notify(message) { const note = document.createElement('div'); note.className = 'toast'; note.textContent = message; document.body.append(note); setTimeout(() => note.remove(), 2800) }
 
 function showProduct(product) { state.modal = 'product'; openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="product-modal"><img src="${product.image}" alt="${product.name}"><div class="modal-content"><span class="eyebrow">${product.category}</span><h2>${product.name}</h2><strong class="price">${money(product.price)}</strong><p>${product.description}</p><div class="specs"><span><small>Material</small>Premium finish</span><span><small>Fit</small>Curated style</span></div><button class="button button-accent" data-add-product="${product.id}">Add to bag</button></div></div>`, 'wide-modal') }
-function showService(service) { state.modal = 'service'; openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="modal-content"><span class="eyebrow">${service.title} / ${money(service.price)}</span><h2>Reserve your session.</h2><p>${service.description}</p><form class="booking-form" data-form="service"><input name="name" placeholder="Full name" required><input name="email" type="email" placeholder="Email" required><input name="phone" placeholder="Phone" required><input name="date" type="date" required><select name="time" required><option value="">Preferred time</option><option>9:00 AM</option><option>11:00 AM</option><option>1:00 PM</option><option>3:00 PM</option><option>5:00 PM</option></select><button class="button button-accent">Request booking</button></form></div>`) }
+function showService(service) { state.modal = 'service'; openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="modal-content"><span class="eyebrow">${service.title} / ${money(service.price)}</span><h2>Reserve your session.</h2><p>${service.description}</p><form class="booking-form" data-form="service"><input type="hidden" name="serviceName" value="${service.title}"><input type="hidden" name="servicePrice" value="${service.price}"><input name="name" placeholder="Full name" required><input name="email" type="email" placeholder="Email" required><input name="phone" placeholder="Phone" required><input name="date" type="date" required><select name="time" required><option value="">Preferred time</option><option>9:00 AM</option><option>11:00 AM</option><option>1:00 PM</option><option>3:00 PM</option><option>5:00 PM</option></select><button class="button button-accent">Request booking</button></form></div>`) }
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -273,6 +333,9 @@ function showCart() { state.modal = 'cart'; const items = state.cart.map(item =>
 function showCheckout() { openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="modal-content"><span class="eyebrow">Secure checkout</span><h2>Almost yours.</h2><form class="booking-form" data-form="checkout"><input name="name" placeholder="Full name" required><input name="email" type="email" placeholder="Email" required><input name="phone" placeholder="Phone" required><input name="address" placeholder="Delivery address" required><button class="button button-accent">Place order · ${money(cartTotal())}</button></form></div>`) }
 
 async function postOrder(endpoint, payload) { const response = await fetch(`/api/order/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return response.json() }
+async function postAuth(endpoint, payload) { const response = await fetch(`/api/auth/${endpoint}`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return response.json() }
+async function postAdmin(endpoint, payload = {}) { const response = await fetch(`/api/admin/${endpoint}`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return response.json() }
+async function getAdminDashboard() { const response = await fetch('/api/admin/dashboard', { credentials: 'include' }); return response.json() }
 
 function changeLook(direction) { state.lookIndex = (state.lookIndex + direction + looks.length) % looks.length; const look = looks[state.lookIndex]; document.querySelector('#lookbook-image').src = look.image; document.querySelector('#lookbook-image').alt = look.title; document.querySelector('#lookbook-title').textContent = look.title; document.querySelector('#lookbook-description').textContent = look.description; document.querySelector('.lookbook-copy .eyebrow').textContent = `0${state.lookIndex + 1} / 0${looks.length}` }
 
@@ -305,6 +368,8 @@ document.addEventListener('click', event => {
   if (action === 'look-prev') changeLook(-1)
   if (action === 'look-next') changeLook(1)
   if (action === 'consultation') showConsultation()
+  if (action === 'admin-change-number') { state.adminNumber = ''; state.adminData = null; renderApp() }
+  if (action === 'admin-logout') { postAdmin('logout').finally(() => { state.adminNumber = ''; state.adminData = null; renderApp() }) }
   if (action === 'checkout') showCheckout()
   if (action === 'scroll-products') document.querySelector('#product-track').scrollBy({ left: event.target.closest('[data-direction]').dataset.direction === 'left' ? -340 : 340, behavior: 'smooth' })
 })
@@ -316,7 +381,31 @@ document.addEventListener('submit', async event => {
   event.preventDefault()
   const data = Object.fromEntries(new FormData(form))
   try {
-    if (form.dataset.form === 'checkout') { await postOrder('create-order', { orderData: { customer: data, items: state.cart, total: cartTotal(), status: 'pending' } }); state.cart = []; saveCart(); updateCartCount() }
+    if (form.dataset.form === 'login' || form.dataset.form === 'signup') {
+      const result = await postAuth(form.dataset.form === 'login' ? 'login' : 'register', data)
+      if (!result.success) throw new Error(result.message)
+      window.location.hash = '#/'
+      renderApp()
+      notify(form.dataset.form === 'login' ? 'Welcome back.' : 'Your account has been created.')
+      return
+    }
+    if (form.dataset.form === 'admin-request') {
+      const result = await postAdmin('request-code', { number: data.number })
+      if (!result.success) throw new Error(result.message)
+      state.adminNumber = data.number
+      renderApp()
+      return
+    }
+    if (form.dataset.form === 'admin-verify') {
+      const result = await postAdmin('verify-code', { number: state.adminNumber, code: data.code })
+      if (!result.success) throw new Error(result.message)
+      const dashboard = await getAdminDashboard()
+      if (!dashboard.success) throw new Error(dashboard.message)
+      state.adminData = dashboard
+      renderApp()
+      return
+    }
+    if (form.dataset.form === 'checkout') { await postOrder('create-order', { orderData: { customer: data, items: state.cart, total: cartTotal(), paymentRef: 'pending', status: 'pending' } }); state.cart = []; saveCart(); updateCartCount() }
     if (form.dataset.form === 'service') await postOrder('create-orderA', { formData: data })
     if (form.dataset.form === 'consultation') {
       const file = form.elements.photo?.files?.[0]
@@ -336,7 +425,16 @@ document.addEventListener('submit', async event => {
       await postOrder('consult', payload)
     }
     closeModal(); notify('Thank you. We will be in touch shortly.')
-  } catch (error) { console.error(error); closeModal(); notify('Request saved. We will contact you shortly.') }
+  } catch (error) {
+    if (form.dataset.form === 'admin-request' || form.dataset.form === 'admin-verify' || form.dataset.form === 'login' || form.dataset.form === 'signup') {
+      const message = document.querySelector('#admin-message')
+      const authMessage = document.querySelector('#auth-message')
+      if (message) message.textContent = error.message
+      if (authMessage) authMessage.textContent = error.message
+      return
+    }
+    console.error(error); closeModal(); notify('Request saved. We will contact you shortly.')
+  }
 })
 
 window.addEventListener('hashchange', renderApp)

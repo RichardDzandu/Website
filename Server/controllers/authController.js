@@ -7,10 +7,14 @@ import { EMAIL_VERIFY_TEMPLATE, PASSWORD_RESET_TEMPLATE, WELCOME_EMAIL_TEMPLATE 
 //Register user
 export const register = async (req, res)=>{
 
-    const {name, email, password, number} = req.body;
+    const {name, password, number} = req.body;
+    const email = String(req.body.email || '').trim().toLowerCase();
 
     if(!name || !email || !password || !number){
-        return res.json({success: false, message: 'Missing Details'})
+        return res.status(400).json({success: false, message: 'Missing Details'})
+    }
+    if(String(password).length < 8){
+        return res.status(400).json({success: false, message: 'Password must be at least 8 characters'})
     }
     try{
         const existingUser = await userModel.findOne({email})
@@ -41,7 +45,11 @@ export const register = async (req, res)=>{
             html: WELCOME_EMAIL_TEMPLATE.replace("{{user.name}}", user.name)
         }
 
-        await transporter.sendMail(mailOptions);
+        try {
+            await transporter.sendMail(mailOptions);
+        } catch (mailError) {
+            console.error('Welcome email failed:', mailError.message);
+        }
 
         return res.json({success: true});
 
@@ -52,7 +60,8 @@ export const register = async (req, res)=>{
 
 //Log in user
 export const login = async (req, res)=>{
-    const {email, password} = req.body;
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const {password} = req.body;
 
     if(!email || !password){
         return res.json({success: false, message: 'Email and Password required'});
@@ -190,7 +199,7 @@ export const sendResetOtp = async (req, res)=>{
     const {email} = req.body;
 
     if(!email){
-        return json({succes: false, message: 'Email is required'})
+        return res.status(400).json({success: false, message: 'Email is required'})
     }
 
     try {
