@@ -1,14 +1,34 @@
 import './index.css'
 
+const categoryMeta = [
+  { slug: 'womens-wear', label: "Women's Wear", blurb: 'Modern silhouettes, statement layers, and effortless comfort for everyday confidence.', hero: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=2070' },
+  { slug: 'mens-wear', label: "Men's Wear", blurb: 'Refined essentials, tailored layers, and elevated basics built for everyday wear.', hero: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=2070' },
+  { slug: 'cosmetics', label: 'Cosmetics', blurb: 'Glow-first essentials with premium formulation and skin-loving texture.', hero: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?q=80&w=2070' },
+  { slug: 'food', label: 'Food', blurb: 'Crafted bites, fresh ingredients, and comforting meals made to feel indulgent.', hero: 'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=2070' },
+  { slug: 'gadgets', label: 'Gadgets', blurb: 'Smart tools and everyday tech that keep life moving beautifully.', hero: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2070' },
+]
+
 const products = [
-  { id: 1, image: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1887', name: 'Silk Wrap Dress', price: 220, category: 'Dresses', tag: 'Bestseller', description: 'Flowing silk wrap dress with adjustable tie. Perfect for day to night transitions. Ethically sourced from Ghanaian artisans.' },
-  { id: 2, image: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?q=80&w=1974', name: 'Kente Blazer Set', price: 340, category: 'Sets', tag: 'New', description: 'Modern Kente print blazer with matching wide-leg trousers. Power dressing redefined.' },
-  { id: 3, image: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?q=80&w=2080', name: 'Glow Facial Package', price: 85, category: 'Beauty', description: '60-minute deep cleanse facial with dermaplaning and LED therapy. Leave with glass skin.' },
-  { id: 4, image: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?q=80&w=2070', name: 'Braided Crown Style', price: 120, category: 'Hair', tag: 'Trending', description: 'Intricate braided crown with gold cuffs. Lasts 6-8 weeks with proper care.' },
-  { id: 5, image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=2070', name: 'Evening Gown', price: 450, category: 'Dresses', description: 'Floor-length silk gown with thigh slit. Red carpet approved.' },
-  { id: 6, image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1920', name: 'Ankara Jumpsuit', price: 180, category: 'Sets', tag: 'Limited', description: 'Bold Ankara print jumpsuit with wide legs and cinched waist.' },
-  { id: 7, image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070', name: 'Bridal Glam Package', price: 300, category: 'Beauty', description: 'Full bridal makeup + hair styling. Includes trial session.' },
-  { id: 8, image: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?q=80&w=2070', name: 'Acrylic Nail Set', price: 60, category: 'Beauty', description: 'Custom acrylic set with nail art. 3-week guarantee.' },
+  { id: 1, image: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1887', name: 'Silk Wrap Dress', price: 220, category: "Women's Wear", slug: 'womens-wear', tag: 'Bestseller', description: 'Flowing silk wrap dress with adjustable tie. Perfect for day to night transitions. Ethically sourced from Ghanaian artisans.' },
+  { id: 2, image: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?q=80&w=1974', name: 'Kente Blazer Set', price: 340, category: "Women's Wear", slug: 'womens-wear', tag: 'New', description: 'Modern Kente print blazer with matching wide-leg trousers. Power dressing redefined.' },
+  { id: 3, image: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?q=80&w=2080', name: 'Glow Facial Package', price: 85, category: 'Cosmetics', slug: 'cosmetics', description: '60-minute deep cleanse facial with dermaplaning and LED therapy. Leave with glass skin.' },
+  { id: 4, image: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?q=80&w=2070', name: 'Braided Crown Style', price: 120, category: 'Cosmetics', slug: 'cosmetics', tag: 'Trending', description: 'Intricate braided crown with gold cuffs. Lasts 6-8 weeks with proper care.' },
+  { id: 5, image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=2070', name: 'Evening Gown', price: 450, category: "Women's Wear", slug: 'womens-wear', description: 'Floor-length silk gown with thigh slit. Red carpet approved.' },
+  { id: 6, image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1920', name: 'Ankara Jumpsuit', price: 180, category: "Women's Wear", slug: 'womens-wear', tag: 'Limited', description: 'Bold Ankara print jumpsuit with wide legs and cinched waist.' },
+  { id: 7, image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070', name: 'Bridal Glam Package', price: 300, category: 'Cosmetics', slug: 'cosmetics', description: 'Full bridal makeup + hair styling. Includes trial session.' },
+  { id: 8, image: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?q=80&w=2070', name: 'Acrylic Nail Set', price: 60, category: 'Cosmetics', slug: 'cosmetics', description: 'Custom acrylic set with nail art. 3-week guarantee.' },
+  { id: 9, image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=2070', name: 'Tailored Linen Shirt', price: 210, category: "Men's Wear", slug: 'mens-wear', tag: 'New', description: 'Crisp linen shirt in a relaxed fit, built for warmer days and polished evenings.' },
+  { id: 10, image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=2070', name: 'Classic Wool Suit', price: 420, category: "Men's Wear", slug: 'mens-wear', description: 'Structured wool suit with a softly tapered fit. Ready for formal and custom styling.' },
+  { id: 11, image: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=2070', name: 'Leather Weekend Jacket', price: 360, category: "Men's Wear", slug: 'mens-wear', tag: 'Trending', description: 'Sleek leather jacket with relaxed shoulders and modern utility detailing.' },
+  { id: 12, image: 'https://images.unsplash.com/photo-1504593811423-6dd665756598?q=80&w=2070', name: 'Casual Knit Polo', price: 180, category: "Men's Wear", slug: 'mens-wear', description: 'Lightweight knit polo in premium cotton blend for elevated everyday layering.' },
+  { id: 13, image: 'https://images.unsplash.com/photo-1547592180-85f173990554?q=80&w=2070', name: 'Signature Jollof Box', price: 95, category: 'Food', slug: 'food', tag: 'Chef pick', description: 'Comforting Ghanaian jollof paired with grilled chicken, plantain, and fresh salad.' },
+  { id: 14, image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=2070', name: 'Grilled Chicken Feast', price: 110, category: 'Food', slug: 'food', description: 'Marinated grilled chicken, roasted potatoes, and sautéed greens for a more indulgent feast.' },
+  { id: 15, image: 'https://images.unsplash.com/photo-1543353071-873f17a7a088?q=80&w=2070', name: 'Wellness Smoothie Set', price: 55, category: 'Food', slug: 'food', description: 'Fresh fruit smoothie bundles with immune-boosting ingredients and vibrant flavor.' },
+  { id: 16, image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070', name: 'Chef’s Daily Platter', price: 130, category: 'Food', slug: 'food', tag: 'Popular', description: 'A rotating platter of seasonal favorites curated for sharing and late dinners.' },
+  { id: 17, image: 'https://images.unsplash.com/photo-1518444065439-e933c06ce9cd?q=80&w=2070', name: 'Noise-Cancel Earbuds', price: 240, category: 'Gadgets', slug: 'gadgets', tag: 'Hot', description: 'Wireless earbuds with deep bass, long battery, and immersive noise canceling.' },
+  { id: 18, image: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?q=80&w=2070', name: 'Smart Fitness Watch', price: 310, category: 'Gadgets', slug: 'gadgets', description: 'Track workouts, health, notifications, and sleep with premium built-in sensors.' },
+  { id: 19, image: 'https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=2070', name: 'Pocket Projector', price: 420, category: 'Gadgets', slug: 'gadgets', description: 'Movie-night-ready projector with wireless casting for home enjoyment and travel.' },
+  { id: 20, image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?q=80&w=2070', name: 'Smart Home Speaker', price: 195, category: 'Gadgets', slug: 'gadgets', tag: 'New', description: 'Compact speaker with voice assistant support, room filling sound, and seamless pairing.' },
 ]
 
 const services = [
@@ -45,29 +65,102 @@ const saveCart = () => localStorage.setItem(cartStorageKey, JSON.stringify(state
 const cartTotal = () => state.cart.reduce((total, item) => total + item.price * item.quantity, 0)
 const cartCount = () => state.cart.reduce((total, item) => total + item.quantity, 0)
 
-function productCards() {
-  return products.map(product => `
+function getCurrentRoute() {
+  const hash = window.location.hash.replace(/^#\/?/, '') || 'home'
+  return hash === 'top' ? 'home' : hash
+}
+
+function productCards(categoryFilter = null) {
+  const list = categoryFilter ? products.filter(product => product.slug === categoryFilter) : products
+  return list.map(product => `
     <article class="product-card" data-product="${product.id}">
       <div class="product-image"><img src="${product.image}" alt="${escapeHtml(product.name)}" loading="lazy">${product.tag ? `<span class="tag">${product.tag}</span>` : ''}</div>
       <div class="product-copy"><span class="eyebrow">${product.category}</span><h3>${product.name}</h3><strong>${money(product.price)}</strong></div>
     </article>`).join('')
 }
 
-function renderApp() {
-  document.documentElement.className = state.theme
-  document.querySelector('#app').innerHTML = `
-    <header class="site-header" id="site-header"><a class="brand" href="#top">Berry's <span>Closet</span></a><nav><a href="#collections">Collections</a><a href="#lookbook">Lookbook</a><a href="#services">Services</a><a href="#consultation">Consultation</a></nav><div class="header-actions"><button class="icon-button" data-action="theme" aria-label="Toggle theme">${state.theme === 'dark' ? '☼' : '◐'}</button><button class="cart-button" data-action="cart" aria-label="Open cart">Bag <b id="cart-count">${cartCount()}</b></button></div></header>
+function renderNav(currentRoute = getCurrentRoute()) {
+  const navItems = [
+    { href: '#/', label: 'Home', slug: 'home' },
+    ...categoryMeta.map(category => ({ href: `#/${category.slug}`, label: category.label, slug: category.slug })),
+    { href: '#consultation', label: 'Consultation', slug: 'consultation' },
+  ]
+
+  return `
+    <header class="site-header" id="site-header">
+      <a class="brand" href="#top">Berry's <span>Closet</span></a>
+      <nav>
+        ${navItems.map(item => `<a href="${item.href}" class="nav-link ${currentRoute === item.slug ? 'active' : ''}">${item.label}</a>`).join('')}
+      </nav>
+      <div class="header-actions">
+        <button class="icon-button" data-action="theme" aria-label="Toggle theme">${state.theme === 'dark' ? '☼' : '◐'}</button>
+        <button class="cart-button" data-action="cart" aria-label="Open cart">Bag <b id="cart-count">${cartCount()}</b></button>
+      </div>
+    </header>
+  `
+}
+
+function renderHomePage() {
+  return `
+    ${renderNav('home')}
     <main id="top">
-      <section class="hero"><img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070" alt="Fashion editorial"><div class="hero-shade"></div><div class="hero-copy"><span class="eyebrow">New season / Accra</span><h1>Define your<br><em>signature look.</em></h1><p>Curated pieces and bespoke styling for the modern muse. Accra to the world.</p><div class="button-row"><a class="button button-accent" href="#collections">Shop collection</a><a class="button button-line" href="#consultation">Book consultation</a></div></div></section>
-      <section class="section collections" id="collections"><div class="section-heading"><div><span class="eyebrow">The edit / 08 pieces</span><h2>Collections</h2></div><div class="scroll-actions"><button class="icon-button" data-action="scroll-products" data-direction="left" aria-label="Scroll products left">←</button><button class="icon-button" data-action="scroll-products" data-direction="right" aria-label="Scroll products right">→</button></div></div><div class="product-track" id="product-track">${productCards()}</div></section>
+      <section class="hero"><img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070" alt="Fashion editorial"><div class="hero-shade"></div><div class="hero-copy"><span class="eyebrow">New season / Accra</span><h1>Define your<br><em>signature look.</em></h1><p>Curated pieces and bespoke styling for the modern muse. Accra to the world.</p><div class="button-row"><a class="button button-accent" href="#/womens-wear">Shop collections</a><a class="button button-line" href="#consultation">Book consultation</a></div></div></section>
+      <section class="section collections" id="collections"><div class="section-heading"><div><span class="eyebrow">The edit / 20 pieces</span><h2>Collections</h2></div><div class="scroll-actions"><button class="icon-button" data-action="scroll-products" data-direction="left" aria-label="Scroll products left">←</button><button class="icon-button" data-action="scroll-products" data-direction="right" aria-label="Scroll products right">→</button></div></div><div class="product-track" id="product-track">${productCards()}</div></section>
       <section class="section lookbook" id="lookbook"><div class="section-heading center"><div><span class="eyebrow">A visual diary</span><h2>Lookbook</h2></div></div><div class="lookbook-frame"><img id="lookbook-image" src="${looks[0].image}" alt="${looks[0].title}"><div class="lookbook-shade"></div><div class="lookbook-copy"><span class="eyebrow">0${state.lookIndex + 1} / 0${looks.length}</span><h3 id="lookbook-title">${looks[0].title}</h3><p id="lookbook-description">${looks[0].description}</p></div><button class="carousel-button prev" data-action="look-prev" aria-label="Previous look">←</button><button class="carousel-button next" data-action="look-next" aria-label="Next look">→</button></div></section>
       <section class="section services" id="services"><div class="section-heading center"><div><span class="eyebrow">What we do</span><h2>Rituals of beauty</h2><p>From everyday glow-ups to special occasions, we make your getting-ready ritual feel like an event.</p></div></div><div class="service-grid">${services.map(service => `<article class="service-card"><div class="service-image"><img src="${service.image}" alt="${service.title}" loading="lazy"><span>${service.icon}</span></div><div class="service-copy"><h3>${service.title}</h3><p>${service.description}</p><div class="service-meta"><strong>From ${money(service.price)}</strong><span>${service.duration}</span></div><button class="button button-dark" data-service="${service.id}">Book now</button></div></article>`).join('')}</div></section>
       <section class="section consultation" id="consultation"><div class="consultation-panel"><span class="eyebrow">Exclusive / GHS 100</span><h2>Before you book.</h2><p class="intro">A considered conversation makes every final look feel unmistakably yours.</p><div class="detail-list"><div><b>01</b><span><strong>Consultation fee</strong>30-minute session with a dedicated consultant.</span></div><div><b>02</b><span><strong>Booking timeline</strong>Book 3–6 months or up to 1 year before your event.</span></div><div><b>03</b><span><strong>Style preparation</strong>Bring your inspiration. We will bring the edit.</span></div></div><button class="button button-accent" data-action="consultation">Book consultation</button></div></section>
       <section class="newsletter"><div><span class="eyebrow">The Berry's list</span><h2>Good things, selectively sent.</h2><p>First access to drops, styling tips, and exclusive events in Accra.</p></div><form id="newsletter-form"><input type="email" name="email" placeholder="Your email address" required><button class="button button-dark">Subscribe</button></form></section>
     </main>
-    <footer><div><a class="brand" href="#top">Berry's <span>Closet</span></a><p>Accra-based. Global style.</p></div><div><b>Explore</b><a href="#collections">Collections</a><a href="#services">Services</a><a href="#consultation">Consultation</a></div><div><b>Connect</b><a href="#">Instagram</a><a href="#">TikTok</a><a href="#">WhatsApp</a></div><small>© 2026 Berry's Closet. All rights reserved.</small></footer>
+    <footer><div><a class="brand" href="#top">Berry's <span>Closet</span></a><p>Accra-based. Global style.</p></div><div><b>Explore</b><a href="#/womens-wear">Women's Wear</a><a href="#/mens-wear">Men's Wear</a><a href="#/cosmetics">Cosmetics</a></div><div><b>Explore</b><a href="#/food">Food</a><a href="#/gadgets">Gadgets</a><a href="#consultation">Consultation</a></div><small>© 2026 Berry's Closet. All rights reserved.</small></footer>
     <div id="modal-root"></div>
   `
+}
+
+function renderCategoryPage(slug) {
+  const category = categoryMeta.find(item => item.slug === slug) || categoryMeta[0]
+  const items = products.filter(product => product.slug === slug)
+
+  return `
+    ${renderNav(slug)}
+    <main class="category-page" id="top">
+      <section class="category-hero" style="background-image: linear-gradient(90deg, rgba(0,0,0,.68), rgba(0,0,0,.15)), url('${category.hero}');">
+        <div class="category-hero-copy">
+          <span class="eyebrow">Curated edit</span>
+          <h1>${category.label}</h1>
+          <p>${category.blurb}</p>
+          <div class="button-row">
+            <a class="button button-accent" href="#collections">Browse ${category.label}</a>
+            <a class="button button-line" href="#consultation">Book a style call</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="section category-content">
+        <div class="section-heading center">
+          <div>
+            <span class="eyebrow">Featured picks</span>
+            <h2>${category.label}</h2>
+          </div>
+        </div>
+        <div class="category-grid">${items.map(product => `
+          <article class="product-card category-product" data-product="${product.id}">
+            <div class="product-image"><img src="${product.image}" alt="${escapeHtml(product.name)}" loading="lazy">${product.tag ? `<span class="tag">${product.tag}</span>` : ''}</div>
+            <div class="product-copy"><span class="eyebrow">${product.category}</span><h3>${product.name}</h3><strong>${money(product.price)}</strong></div>
+          </article>
+        `).join('')}</div>
+      </section>
+    </main>
+    <footer><div><a class="brand" href="#top">Berry's <span>Closet</span></a><p>Accra-based. Global style.</p></div><div><b>Explore</b><a href="#/womens-wear">Women's Wear</a><a href="#/mens-wear">Men's Wear</a><a href="#/cosmetics">Cosmetics</a></div><div><b>Explore</b><a href="#/food">Food</a><a href="#/gadgets">Gadgets</a><a href="#consultation">Consultation</a></div><small>© 2026 Berry's Closet. All rights reserved.</small></footer>
+    <div id="modal-root"></div>
+  `
+}
+
+function renderApp() {
+  document.documentElement.className = state.theme
+  const route = getCurrentRoute()
+  const page = route === 'home' || route === 'collections' || route === 'lookbook' || route === 'services' || route === 'consultation' ? 'home' : route
+
+  document.querySelector('#app').innerHTML = page === 'home' ? renderHomePage() : renderCategoryPage(page)
   updateCartCount()
 }
 
@@ -77,7 +170,7 @@ function closeModal() { document.querySelector('#modal-root').innerHTML = ''; do
 function addToCart(product) { state.cart.push({ ...product, cartItemId: crypto.randomUUID(), quantity: 1 }); saveCart(); updateCartCount(); closeModal(); notify(`${product.name} added to your bag.`) }
 function notify(message) { const note = document.createElement('div'); note.className = 'toast'; note.textContent = message; document.body.append(note); setTimeout(() => note.remove(), 2800) }
 
-function showProduct(product) { state.modal = 'product'; openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="product-modal"><img src="${product.image}" alt="${product.name}"><div class="modal-content"><span class="eyebrow">${product.category}</span><h2>${product.name}</h2><strong class="price">${money(product.price)}</strong><p>${product.description}</p><div class="specs"><span><small>Material</small>Premium silk</span><span><small>Fit</small>True to size</span></div><button class="button button-accent" data-add-product="${product.id}">Add to bag</button></div></div>`, 'wide-modal') }
+function showProduct(product) { state.modal = 'product'; openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="product-modal"><img src="${product.image}" alt="${product.name}"><div class="modal-content"><span class="eyebrow">${product.category}</span><h2>${product.name}</h2><strong class="price">${money(product.price)}</strong><p>${product.description}</p><div class="specs"><span><small>Material</small>Premium finish</span><span><small>Fit</small>Curated style</span></div><button class="button button-accent" data-add-product="${product.id}">Add to bag</button></div></div>`, 'wide-modal') }
 function showService(service) { state.modal = 'service'; openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="modal-content"><span class="eyebrow">${service.title} / ${money(service.price)}</span><h2>Reserve your session.</h2><p>${service.description}</p><form class="booking-form" data-form="service"><input name="name" placeholder="Full name" required><input name="email" type="email" placeholder="Email" required><input name="phone" placeholder="Phone" required><input name="date" type="date" required><select name="time" required><option value="">Preferred time</option><option>9:00 AM</option><option>11:00 AM</option><option>1:00 PM</option><option>3:00 PM</option><option>5:00 PM</option></select><button class="button button-accent">Request booking</button></form></div>`) }
 function showConsultation() { openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="modal-content"><span class="eyebrow">Style consultation / GHS 100</span><h2>Let’s make a plan.</h2><p>Tell us where you are going and we will shape the look around you.</p><form class="booking-form" data-form="consultation"><input name="name" placeholder="Full name" required><input name="email" type="email" placeholder="Email" required><input name="phone" placeholder="Phone" required><input name="date" type="date" required><button class="button button-accent">Request consultation</button></form></div>`) }
 
@@ -89,6 +182,20 @@ async function postOrder(endpoint, payload) { const response = await fetch(`/api
 function changeLook(direction) { state.lookIndex = (state.lookIndex + direction + looks.length) % looks.length; const look = looks[state.lookIndex]; document.querySelector('#lookbook-image').src = look.image; document.querySelector('#lookbook-image').alt = look.title; document.querySelector('#lookbook-title').textContent = look.title; document.querySelector('#lookbook-description').textContent = look.description; document.querySelector('.lookbook-copy .eyebrow').textContent = `0${state.lookIndex + 1} / 0${looks.length}` }
 
 document.addEventListener('click', event => {
+  const navLink = event.target.closest('a[href^="#/"]')
+  if (navLink) {
+    const href = navLink.getAttribute('href')
+    if (href === '#/' || href === '#consultation' || href === '#top') {
+      return
+    }
+    if (href.startsWith('#/')) {
+      event.preventDefault()
+      window.location.hash = href
+      renderApp()
+      return
+    }
+  }
+
   const action = event.target.closest('[data-action]')?.dataset.action
   const productId = event.target.closest('[data-product]')?.dataset.product
   if (productId) showProduct(products.find(product => product.id === Number(productId)))
@@ -119,6 +226,8 @@ document.addEventListener('submit', async event => {
     closeModal(); notify('Thank you. We will be in touch shortly.')
   } catch (error) { console.error(error); closeModal(); notify('Request saved. We will contact you shortly.') }
 })
+
+window.addEventListener('hashchange', renderApp)
 
 renderApp()
 window.addEventListener('scroll', () => document.querySelector('#site-header')?.classList.toggle('scrolled', window.scrollY > 24))
