@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import crypto from "crypto";
 
 const ordersShema = new mongoose.Schema({
     customerName: {type: String, required: true},
@@ -11,6 +12,7 @@ const ordersShema = new mongoose.Schema({
     total:{type: Number, required: true},
     paymentRef:{type: String, required: true},
     status: {type: String, default: "order made"},
+    trackingId: {type: String, default: () => `BC-${crypto.randomBytes(4).toString('hex').toUpperCase()}`},
 },{timestamps: true},)
 
 const orderAModel = mongoose.models.wordersA || mongoose.model('wordersA', ordersShema);

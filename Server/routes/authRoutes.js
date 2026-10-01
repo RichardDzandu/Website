@@ -6,6 +6,7 @@ import { authLimiter } from "../config/rateLimiters.js";
 const authRouter = express.Router();
 
 authRouter.post('/register', authLimiter, register);
+authRouter.post('/signup', authLimiter, register);
 authRouter.post('/login', authLimiter, login);
 authRouter.post('/logout', logout);
 authRouter.post('/send-verify-otp', userAuth, sendVerifyOtp);

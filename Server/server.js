@@ -20,9 +20,17 @@ const server = http.createServer(app);
 //Middleware setup
 app.use(express.json({ limit: '50mb' }));
 app.use(cookieParser());
-// Allow requests from a specific origin
+const allowedOrigins = new Set([
+  'https://sojamart.vercel.app',
+  'http://localhost:5175',
+  'http://localhost:5174',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://192.168.1.169:5173',
+  ...(process.env.CLIENT_URLS || '').split(',').map(origin => origin.trim()).filter(Boolean),
+]);
 app.use(cors({
-  origin: ['https://sojamart.vercel.app', 'http://localhost:5175', 'http://localhost:5174', 'http://localhost:5173', 'http://192.168.1.169:5173',],
+  origin: (origin, callback) => callback(null, !origin || allowedOrigins.has(origin)),
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'token']
 }));

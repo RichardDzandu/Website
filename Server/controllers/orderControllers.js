@@ -13,7 +13,7 @@ export const createOrderA = async (req, res) => {
     const order = new orderModel({ clientName, email, phone, date, time, notes, serviceName, servicePrice });
     await order.save();
 
-    return res.json({ success: true, message: "Order successfully created" });
+    return res.json({ success: true, message: "Order successfully created", trackingId: order.trackingId });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ success: false, message: error.message });
@@ -44,18 +44,22 @@ export const createOrder = async (req, res) => {
   try {
     const { customer, items, total, paymentRef, status } = req.body.orderData;
     const { name, email, phone, address } = customer;
-    const { price, quantity } = items[0];
+    if (!Array.isArray(items) || !items.length) {
+      return res.status(400).json({ success: false, message: 'Order must contain at least one item' });
+    }
+    const itemName = items.map(item => `${item.name} x${item.quantity}`).join(', ');
+    const quantity = items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+    const price = items.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 0), 0);
     const customerName = name;
-    const itemName = items[0].name
     // Validate required fields
-    if (!customerName || !email || !phone || !address || !itemName || !price || !quantity || !total || !paymentRef || !status) {
+    if (!customerName || !email || !phone || !address || !itemName || price <= 0 || quantity <= 0 || total <= 0 || !paymentRef || !status) {
       return res.status(400).json({ success: false, message: 'Missing Required Details' });
     }
     
-    const order = new orderAModel({ customerName, email, phone, address, itemName, price, quantity, total, paymentRef, status });
+    const order = new orderAModel({ customerName, email, phone, address, itemName, price: String(price), quantity, total, paymentRef, status });
     await order.save();
 
-    return res.json({ success: true, message: "Order successfully created" });
+    return res.json({ success: true, message: "Order successfully created", trackingId: order.trackingId });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ success: false, message: error.message });

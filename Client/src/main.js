@@ -1,5 +1,7 @@
 import './index.css'
-
+import sandalLookImage from '../photo_2026-09-27_16-26-10.jpg'
+import sandal from '../photo_2026-09-27_16-25-40.jpg'
+import bag from '../photo_2026-09-27_17-06-57.jpg'
 const categoryMeta = [
   { slug: 'womens-wear', label: "Women's Wear", blurb: 'Modern silhouettes, statement layers, and effortless comfort for everyday confidence.', hero: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=2070' },
   { slug: 'mens-wear', label: "Men's Wear", blurb: 'Refined essentials, tailored layers, and elevated basics built for everyday wear.', hero: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=2070' },
@@ -8,7 +10,7 @@ const categoryMeta = [
   { slug: 'gadgets', label: 'Gadgets', blurb: 'Smart tools and everyday tech that keep life moving beautifully.', hero: 'https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2070' },
 ]
 
-const products = [
+let products = [
   { id: 1, image: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1887', name: 'Silk Wrap Dress', price: 220, category: "Women's Wear", slug: 'womens-wear', tag: 'Bestseller', description: 'Flowing silk wrap dress with adjustable tie. Perfect for day to night transitions. Ethically sourced from Ghanaian artisans.' },
   { id: 2, image: 'https://images.unsplash.com/photo-1558769132-cb1aea458c5e?q=80&w=1974', name: 'Kente Blazer Set', price: 340, category: "Women's Wear", slug: 'womens-wear', tag: 'New', description: 'Modern Kente print blazer with matching wide-leg trousers. Power dressing redefined.' },
   { id: 3, image: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?q=80&w=2080', name: 'Glow Facial Package', price: 85, category: 'Cosmetics', slug: 'cosmetics', description: '60-minute deep cleanse facial with dermaplaning and LED therapy. Leave with glass skin.' },
@@ -29,6 +31,7 @@ const products = [
   { id: 18, image: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?q=80&w=2070', name: 'Smart Fitness Watch', price: 310, category: 'Gadgets', slug: 'gadgets', description: 'Track workouts, health, notifications, and sleep with premium built-in sensors.' },
   { id: 19, image: 'https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=2070', name: 'Pocket Projector', price: 420, category: 'Gadgets', slug: 'gadgets', description: 'Movie-night-ready projector with wireless casting for home enjoyment and travel.' },
   { id: 20, image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?q=80&w=2070', name: 'Smart Home Speaker', price: 195, category: 'Gadgets', slug: 'gadgets', tag: 'New', description: 'Compact speaker with voice assistant support, room filling sound, and seamless pairing.' },
+  { id: 20, image: bag, name: 'Smart Home Speaker', price: 195, category: 'Gadgets', slug: 'gadgets', tag: 'New', description: 'Compact speaker with voice assistant support, room filling sound, and seamless pairing.' },
 ]
 
 const services = [
@@ -40,10 +43,13 @@ const services = [
   { id: 6, icon: '▧', title: 'Full Glam Package', description: 'Hair + makeup + styling for photoshoots, weddings, and special events. Red carpet ready.', price: 350, duration: '4-5 hrs', image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=2070' },
 ]
 
-const looks = [
+let looks = [
   { image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1920', title: 'Urban Goddess', description: 'Ankara meets streetwear' },
   { image: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070', title: 'Minimal Muse', description: 'Clean lines, bold energy' },
   { image: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=2070', title: 'Evening Royale', description: 'Silk and statement jewelry' },
+  { image: sandalLookImage, title: 'Woven Slides', description: 'Forest-green slides in sizes 40 & 41' },
+  { image: sandal, title: 'Bag', description: 'Styled bag' },
+  { image: bag, title: 'Red bag', description: 'Nice Material bag', height: '200px', width: '200px' },
 ]
 
 const cartStorageKey = 'berrys-closet-cart'
@@ -58,7 +64,10 @@ const state = {
   modal: null,
   checkout: false,
   adminNumber: '',
+  adminPassword: '',
   adminData: null,
+  adminProducts: [],
+  adminSettings: null,
 }
 
 const money = value => `GHS${Number(value).toFixed(2)}`
@@ -68,8 +77,19 @@ const cartTotal = () => state.cart.reduce((total, item) => total + item.price * 
 const cartCount = () => state.cart.reduce((total, item) => total + item.quantity, 0)
 
 function getCurrentRoute() {
+  const pathname = window.location.pathname.replace(/\/$/, '') || '/'
+  if (pathname === '/login') return 'login'
+  if (pathname === '/signup') return 'signup'
+  if (pathname === '/admin/login') return 'admin-login'
+  if (pathname === '/admin/dashboard') return 'admin-dashboard'
+  if (pathname === '/admin' || pathname.startsWith('/admin/')) return 'admin-blocked'
   const hash = window.location.hash.replace(/^#\/?/, '') || 'home'
   return hash === 'top' ? 'home' : hash
+}
+
+function navigateTo(path) {
+  window.history.pushState({}, '', path)
+  renderApp()
 }
 
 function productCards(categoryFilter = null) {
@@ -86,7 +106,7 @@ function renderNav(currentRoute = getCurrentRoute()) {
     { href: '#/', label: 'Home', slug: 'home' },
     ...categoryMeta.map(category => ({ href: `#/${category.slug}`, label: category.label, slug: category.slug })),
     { href: '#consultation', label: 'Item Request', slug: 'consultation' },
-    { href: '#/login', label: 'Account', slug: 'login' },
+    { href: '/login', label: 'Account', slug: 'login' },
   ]
 
   return `
@@ -107,20 +127,20 @@ function renderNav(currentRoute = getCurrentRoute()) {
 }
 
 function renderHomePage() {
+  const lookbook = looks.length ? `<section class="section lookbook" id="lookbook"><div class="section-heading center"><div><span class="eyebrow">A visual diary</span><h2>Lookbook</h2></div></div><div class="lookbook-frame"><img id="lookbook-image" src="${looks[0].image}" alt="${escapeHtml(looks[0].title)}"><div class="lookbook-shade"></div><div class="lookbook-copy"><span class="eyebrow">01 / ${String(looks.length).padStart(2, '0')}</span><h3 id="lookbook-title">${escapeHtml(looks[0].title)}</h3><p id="lookbook-description">${escapeHtml(looks[0].description)}</p></div><button class="carousel-button prev" data-action="look-prev" aria-label="Previous look">←</button><button class="carousel-button next" data-action="look-next" aria-label="Next look">→</button></div></section>` : ''
   return `
     ${renderNav('home')}
     <main id="top">
       <section class="hero"><img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070" alt="Fashion editorial"><div class="hero-shade"></div><div class="hero-copy"><span class="eyebrow">New season / Accra</span><h1>Define your<br><em>signature look.</em></h1><p>Curated pieces and bespoke styling for the modern muse. Accra to the world.</p><div class="button-row"><a class="button button-accent" href="#/womens-wear">Shop collections</a><a class="button button-line" href="#consultation">Item request</a></div></div></section>
       <section class="section collections" id="collections"><div class="section-heading"><div><span class="eyebrow">The edit / 20 pieces</span><h2>Collections</h2></div><div class="scroll-actions"><button class="icon-button" data-action="scroll-products" data-direction="left" aria-label="Scroll products left">←</button><button class="icon-button" data-action="scroll-products" data-direction="right" aria-label="Scroll products right">→</button></div></div><div class="product-track" id="product-track">${productCards()}</div></section>
-      <section class="section lookbook" id="lookbook"><div class="section-heading center"><div><span class="eyebrow">A visual diary</span><h2>Lookbook</h2></div></div><div class="lookbook-frame"><img id="lookbook-image" src="${looks[0].image}" alt="${looks[0].title}"><div class="lookbook-shade"></div><div class="lookbook-copy"><span class="eyebrow">0${state.lookIndex + 1} / 0${looks.length}</span><h3 id="lookbook-title">${looks[0].title}</h3><p id="lookbook-description">${looks[0].description}</p></div><button class="carousel-button prev" data-action="look-prev" aria-label="Previous look">←</button><button class="carousel-button next" data-action="look-next" aria-label="Next look">→</button></div></section>
+      ${lookbook}
+      <section class="section tracking-section"><div class="tracking-copy"><span class="eyebrow">Order updates</span><h2>Track your order</h2><p>Enter the tracking number from your order confirmation.</p></div><form class="tracking-form" data-form="track-order"><input name="trackingId" placeholder="Tracking number" required><button class="button button-accent">Track</button><p id="tracking-result" aria-live="polite"></p></form></section>
       <section class="section services" id="services"><div class="section-heading center"><div><span class="eyebrow">What we do</span><h2>Rituals of beauty</h2><p>From everyday glow-ups to special occasions, we make your getting-ready ritual feel like an event.</p></div></div><div class="service-grid">${services.map(service => `<article class="service-card"><div class="service-image"><img src="${service.image}" alt="${service.title}" loading="lazy"><span>${service.icon}</span></div><div class="service-copy"><h3>${service.title}</h3><p>${service.description}</p><div class="service-meta"><strong>From ${money(service.price)}</strong><span>${service.duration}</span></div><button class="button button-dark" data-service="${service.id}">Book now</button></div></article>`).join('')}</div></section>
       <section class="section consultation" id="consultation"><div class="consultation-panel"><span class="eyebrow">Item request</span><h2>Request an item</h2><p class="intro">Share the item you want and attach a photo so we know exactly what you need.</p><div class="detail-list"><div><b>01</b><span><strong>Your name</strong>Tell us who the request is from.</span></div><div><b>02</b><span><strong>Product name</strong>Write the exact item name or description.</span></div><div><b>03</b><span><strong>Image upload</strong>Upload a clear photo of the item for reference.</span></div></div><button class="button button-accent" data-action="consultation">Submit request</button></div></section>
       <section class="newsletter"><div><span class="eyebrow">The Berry's list</span><h2>Good things, selectively sent.</h2><p>First access to drops, styling tips, and exclusive events in Accra.</p></div><form id="newsletter-form"><input type="email" name="email" placeholder="Your email address" required><button class="button button-dark">Subscribe</button></form></section>
     </main>
     <footer>
       <div><a class="brand" href="#top">Berry's <span>Closet</span></a><p>Accra-based. Global style.</p></div>
-      <div><b>Shop</b><a href="#/womens-wear">Women's Wear</a><a href="#/mens-wear">Men's Wear</a><a href="#/cosmetics">Cosmetics</a></div>
-      <div><b>More</b><a href="#/food">Food</a><a href="#/gadgets">Gadgets</a><a href="#consultation">Item Request</a></div>
       <small>© 2026 Berry's Closet. All rights reserved.</small>
     </footer>
     <div id="modal-root"></div>
@@ -223,8 +243,6 @@ function renderCategoryPage(slug) {
     </main>
     <footer>
       <div><a class="brand" href="#top">Berry's <span>Closet</span></a><p>Accra-based. Global style.</p></div>
-      <div><b>Shop</b><a href="#/womens-wear">Women's Wear</a><a href="#/mens-wear">Men's Wear</a><a href="#/cosmetics">Cosmetics</a></div>
-      <div><b>More</b><a href="#/food">Food</a><a href="#/gadgets">Gadgets</a><a href="#consultation">Item Request</a></div>
       <small>© 2026 Berry's Closet. All rights reserved.</small>
     </footer>
     <div id="modal-root"></div>
@@ -253,10 +271,10 @@ function renderAdminPage() {
       <section class="admin-panel">
         <span class="eyebrow">Restricted access</span>
         <h1>Admin portal</h1>
-        <p>${isCodeStep ? `Enter the code sent to ${state.adminNumber}.` : 'Enter an authorized mobile number to receive a verification code.'}</p>
+        <p>${isCodeStep ? `Enter the code sent to ${escapeHtml(state.adminNumber)}.` : 'Enter your authorized number and admin password. A one-time code is required every time.'}</p>
         <form class="admin-form" data-form="${isCodeStep ? 'admin-verify' : 'admin-request'}">
-          ${isCodeStep ? `<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="6-digit code" required>` : '<input name="number" type="tel" autocomplete="tel" placeholder="Mobile number" required>'}
-          <button class="button button-accent">${isCodeStep ? 'Verify code' : 'Send code'}</button>
+          ${isCodeStep ? `<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="6-digit code" required>` : '<input name="number" type="tel" autocomplete="tel" placeholder="Mobile number" required><input name="password" type="password" autocomplete="current-password" placeholder="Admin password" required>'}
+          <button class="button button-accent">${isCodeStep ? 'Verify code' : 'Continue to OTP'}</button>
         </form>
         ${isCodeStep ? '<button class="admin-secondary" data-action="admin-change-number">Use a different number</button>' : ''}
         <p class="admin-message" id="admin-message" aria-live="polite"></p>
@@ -266,13 +284,27 @@ function renderAdminPage() {
 }
 
 function renderAdminDashboard(data) {
-  const rows = [...data.itemRequests.map(item => ({ type: 'Item request', customer: item.name, item: item.productName, status: item.status, date: item.createdAt || item.date })), ...data.itemOrders.map(item => ({ type: 'Order', customer: item.customerName, item: item.itemName, status: item.status, date: item.createdAt })), ...data.serviceOrders.map(item => ({ type: 'Service', customer: item.clientName, item: item.serviceName, status: item.status, date: item.createdAt || item.date }))]
+  const rows = [...data.itemRequests.map(item => ({ type: 'Item request', customer: item.name, item: item.productName, status: item.status, date: item.createdAt || item.date })), ...data.itemOrders.map(item => ({ id: item._id, trackingId: item.trackingId || item._id, kind: 'item', type: 'Order', customer: item.customerName, item: item.itemName, status: item.status, date: item.createdAt })), ...data.serviceOrders.map(item => ({ id: item._id, trackingId: item.trackingId || item._id, kind: 'service', type: 'Service', customer: item.clientName, item: item.serviceName, status: item.status, date: item.createdAt || item.date }))]
+  const settings = state.adminSettings || { accent: '#e94f70', paper: '#f7f3f1', ink: '#171516', looks: [] }
+  const statuses = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled']
   return `
     <main class="admin-page admin-dashboard">
       <section class="admin-panel admin-panel-wide">
         <div class="admin-heading"><div><span class="eyebrow">Restricted access</span><h1>Admin dashboard</h1></div><button class="admin-secondary" data-action="admin-logout">Log out</button></div>
         <div class="admin-stats"><div><strong>${data.itemRequests.length}</strong><span>Item requests</span></div><div><strong>${data.itemOrders.length}</strong><span>Orders</span></div><div><strong>${data.serviceOrders.length}</strong><span>Services</span></div></div>
-        <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Type</th><th>Customer</th><th>Request</th><th>Status</th><th>Date</th></tr></thead><tbody>${rows.length ? rows.map(row => `<tr><td>${row.type}</td><td>${escapeHtml(row.customer || 'Unknown')}</td><td>${escapeHtml(row.item || '')}</td><td>${escapeHtml(row.status || 'Pending')}</td><td>${row.date ? new Date(row.date).toLocaleDateString() : '-'}</td></tr>`).join('') : '<tr><td colspan="5">No records yet.</td></tr>'}</tbody></table></div>
+        <h2 class="admin-section-title">Order tracking</h2>
+        <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Tracking ID</th><th>Type</th><th>Customer</th><th>Order</th><th>Status</th><th>Date</th></tr></thead><tbody>${rows.length ? rows.map(row => `<tr><td>${escapeHtml(row.trackingId || '')}</td><td>${row.type}</td><td>${escapeHtml(row.customer || 'Unknown')}</td><td>${escapeHtml(row.item || '')}</td><td>${row.id ? `<select data-tracking-id="${escapeHtml(row.id)}" data-tracking-kind="${row.kind}">${statuses.map(status => `<option ${String(row.status).toLowerCase() === status.toLowerCase() ? 'selected' : ''}>${status}</option>`).join('')}</select>` : escapeHtml(row.status || 'Pending')}</td><td>${row.date ? new Date(row.date).toLocaleDateString() : '-'}</td></tr>`).join('') : '<tr><td colspan="6">No records yet.</td></tr>'}</tbody></table></div>
+        <h2 class="admin-section-title">Products</h2>
+        <form class="admin-form admin-product-form" data-form="admin-product"><input name="name" placeholder="Product name" required><input name="price" type="number" min="0" step="0.01" placeholder="Price (GHS)" required><input name="quantity" type="number" min="1" step="1" placeholder="Stock quantity" required><select name="category"><option value="womens-wear">Women's Wear</option><option value="mens-wear">Men's Wear</option><option value="cosmetics">Cosmetics</option><option value="food">Food</option><option value="gadgets">Gadgets</option></select><input name="photo" type="file" accept="image/*" required><textarea name="description" placeholder="Description"></textarea><button class="button button-accent">Add product</button></form>
+        <div class="admin-toolbar"><span>${state.adminProducts.length} products</span><button class="admin-secondary" data-clear-products>Delete all products</button></div>
+        <div class="admin-product-list">${state.adminProducts.map(product => `<form class="admin-product-edit" data-form="admin-product-update" data-product-id="${escapeHtml(product._id)}"><img src="${escapeHtml(product.image || '')}" alt=""><input name="name" value="${escapeHtml(product.name)}" required><input name="price" type="number" min="0" step="0.01" value="${Number(product.price)}" required><input name="quantity" type="number" min="1" value="${product.quantity}" required><select name="category">${categoryMeta.map(category => `<option value="${category.slug}" ${product.slug === category.slug ? 'selected' : ''}>${category.label}</option>`).join('')}</select><textarea name="description" placeholder="Description">${escapeHtml(product.description || '')}</textarea><input name="photo" type="file" accept="image/*"><button class="admin-secondary">Save</button><button type="button" class="admin-secondary" data-product-delete="${escapeHtml(product._id)}">Delete</button></form>`).join('') || '<p>No saved products yet.</p>'}</div>
+        <h2 class="admin-section-title">Lookbook photos</h2>
+        <form class="admin-form admin-product-form" data-form="admin-look"><input name="title" placeholder="Photo title" required><input name="description" placeholder="Short caption"><input name="photo" type="file" accept="image/*" required><button class="button button-accent">Add photo</button></form>
+        <div class="admin-toolbar"><span>${(settings.looks || []).length} photos</span><button class="admin-secondary" data-clear-looks>Delete all photos</button></div>
+        <div class="admin-look-list">${(settings.looks || []).map(look => `<div class="admin-photo-row"><img src="${escapeHtml(look.image)}" alt=""><span>${escapeHtml(look.title)}</span><button class="admin-secondary" data-look-delete="${escapeHtml(look._id)}">Delete</button></div>`).join('') || '<p>No lookbook photos.</p>'}</div>
+        <h2 class="admin-section-title">Website colors</h2>
+        <form class="admin-color-form" data-form="admin-colors"><label>Accent<input name="accent" type="color" value="${settings.accent}"></label><label>Background<input name="paper" type="color" value="${settings.paper}"></label><label>Text<input name="ink" type="color" value="${settings.ink}"></label><button class="button button-accent">Save colors</button></form>
+        <p class="admin-message" id="admin-message" aria-live="polite"></p>
       </section>
     </main>
   `
@@ -295,7 +327,7 @@ function renderAuthPage(mode = 'login') {
           <button class="button button-accent">${isLogin ? 'Log in' : 'Sign up'}</button>
         </form>
         <p class="auth-message" id="auth-message" aria-live="polite"></p>
-        <a class="auth-switch" href="#/${isLogin ? 'signup' : 'login'}">${isLogin ? 'Need an account? Sign up' : 'Already have an account? Log in'}</a>
+        <a class="auth-switch" href="/${isLogin ? 'signup' : 'login'}">${isLogin ? 'Need an account? Sign up' : 'Already have an account? Log in'}</a>
       </section>
     </main>
   `
@@ -304,6 +336,33 @@ function renderAuthPage(mode = 'login') {
 function renderApp() {
   document.documentElement.className = state.theme
   const route = getCurrentRoute()
+  if (route.startsWith('admin-')) {
+    const app = document.querySelector('#app')
+    app.innerHTML = '<main class="admin-page"><section class="admin-panel"><p>Checking admin session...</p></section></main>'
+    getAdminSession().then(async result => {
+      if (!result.success || result.role !== 'admin') {
+        state.adminData = null
+        if (route !== 'admin-login') state.adminNumber = ''
+        if (window.location.pathname !== '/admin/login') window.history.replaceState({}, '', '/admin/login')
+        app.innerHTML = renderAdminPage()
+        return
+      }
+      if (route !== 'admin-dashboard') window.history.replaceState({}, '', '/admin/dashboard')
+      await loadAdminData()
+      app.innerHTML = renderAdminDashboard(state.adminData)
+    }).catch(error => {
+      if (route !== 'admin-login') window.history.replaceState({}, '', '/admin/login')
+      app.innerHTML = renderAdminPage()
+      const message = document.querySelector('#admin-message')
+      if (message) message.textContent = error.message
+    })
+    updateCartCount()
+    return
+  }
+  if (route === 'admin') {
+    navigateTo('/admin/dashboard')
+    return
+  }
   const page = route === 'home' || route === 'collections' || route === 'lookbook' || route === 'services' ? 'home' : route === 'consultation' ? 'item-request' : route === 'admin' ? 'admin' : route === 'login' || route === 'signup' ? route : route === 'cart' ? 'cart' : route
 
   document.querySelector('#app').innerHTML = page === 'home' ? renderHomePage() : page === 'cart' ? renderCartPage() : page === 'item-request' ? renderItemRequestPage() : page === 'admin' ? renderAdminPage() : page === 'login' ? renderAuthPage('login') : page === 'signup' ? renderAuthPage('signup') : renderCategoryPage(page)
@@ -333,11 +392,48 @@ function showCart() { state.modal = 'cart'; const items = state.cart.map(item =>
 function showCheckout() { openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="modal-content"><span class="eyebrow">Secure checkout</span><h2>Almost yours.</h2><form class="booking-form" data-form="checkout"><input name="name" placeholder="Full name" required><input name="email" type="email" placeholder="Email" required><input name="phone" placeholder="Phone" required><input name="address" placeholder="Delivery address" required><button class="button button-accent">Place order · ${money(cartTotal())}</button></form></div>`) }
 
 async function postOrder(endpoint, payload) { const response = await fetch(`/api/order/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return response.json() }
-async function postAuth(endpoint, payload) { const response = await fetch(`/api/auth/${endpoint}`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return response.json() }
-async function postAdmin(endpoint, payload = {}) { const response = await fetch(`/api/admin/${endpoint}`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return response.json() }
+async function postAuth(endpoint, payload) { const response = await fetch(`/api/auth/${endpoint}`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return response.json().catch(() => ({ success: false, message: 'Could not reach the authentication service' })) }
+async function postAdmin(endpoint, payload = {}, method = 'POST') { const response = await fetch(`/api/admin/${endpoint}`, { method, credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return response.json().catch(() => ({ success: false, message: 'Could not reach the admin service' })) }
 async function getAdminDashboard() { const response = await fetch('/api/admin/dashboard', { credentials: 'include' }); return response.json() }
+async function getAdminSession() { const response = await fetch('/api/admin/session', { credentials: 'include' }); return response.json().catch(() => ({ success: false, message: 'Admin authentication service is unavailable' })) }
+async function loadPublicContent() {
+  try {
+    const [settingsResponse, productsResponse] = await Promise.all([fetch('/api/admin/public-settings'), fetch('/api/product/data')])
+    const settingsResult = await settingsResponse.json()
+    const productsResult = await productsResponse.json()
+    if (settingsResult.success && settingsResult.settings) {
+      document.documentElement.style.setProperty('--accent', settingsResult.settings.accent)
+      document.documentElement.style.setProperty('--paper', settingsResult.settings.paper)
+      document.documentElement.style.setProperty('--ink', settingsResult.settings.ink)
+      if (settingsResult.settings.lookbookManaged) {
+        looks = settingsResult.settings.looks || []
+        state.lookIndex = 0
+      }
+    }
+    if (productsResult.success && settingsResult.settings?.catalogManaged) {
+      products = productsResult.products.map(product => ({ ...product, id: product._id, price: Number(product.price), category: product.category || "Women's Wear", slug: product.slug || 'womens-wear' }))
+    }
+    if (settingsResult.success && (getCurrentRoute() === 'home' || categoryMeta.some(category => category.slug === getCurrentRoute()))) renderApp()
+  } catch (error) {
+    console.error('Could not load published catalog settings:', error)
+  }
+}
 
-function changeLook(direction) { state.lookIndex = (state.lookIndex + direction + looks.length) % looks.length; const look = looks[state.lookIndex]; document.querySelector('#lookbook-image').src = look.image; document.querySelector('#lookbook-image').alt = look.title; document.querySelector('#lookbook-title').textContent = look.title; document.querySelector('#lookbook-description').textContent = look.description; document.querySelector('.lookbook-copy .eyebrow').textContent = `0${state.lookIndex + 1} / 0${looks.length}` }
+async function loadAdminData() {
+  const initialized = await postAdmin('storefront/initialize', { products, looks })
+  if (!initialized.success) throw new Error(initialized.message)
+  const [dashboard, productsResult, settingsResult] = await Promise.all([getAdminDashboard(), fetch('/api/admin/products', { credentials: 'include' }).then(response => response.json()), fetch('/api/admin/site-settings', { credentials: 'include' }).then(response => response.json())])
+  if (!dashboard.success) throw new Error(dashboard.message)
+  if (!productsResult.success) throw new Error(productsResult.message)
+  if (!settingsResult.success) throw new Error(settingsResult.message)
+  state.adminData = dashboard
+  state.adminProducts = productsResult.products
+  state.adminSettings = settingsResult.settings
+}
+
+async function refreshAdmin() { await loadAdminData(); renderApp() }
+
+function changeLook(direction) { if (!looks.length) return; state.lookIndex = (state.lookIndex + direction + looks.length) % looks.length; const look = looks[state.lookIndex]; document.querySelector('#lookbook-image').src = look.image; document.querySelector('#lookbook-image').alt = look.title; document.querySelector('#lookbook-title').textContent = look.title; document.querySelector('#lookbook-description').textContent = look.description; document.querySelector('.lookbook-copy .eyebrow').textContent = `${String(state.lookIndex + 1).padStart(2, '0')} / ${String(looks.length).padStart(2, '0')}` }
 
 document.addEventListener('click', event => {
   const navLink = event.target.closest('a[href^="#/"]')
@@ -357,8 +453,8 @@ document.addEventListener('click', event => {
   const action = event.target.closest('[data-action]')?.dataset.action
   const productId = event.target.closest('[data-product]')?.dataset.product
   const isCartRoute = getCurrentRoute() === 'cart'
-  if (productId) showProduct(products.find(product => product.id === Number(productId)))
-  if (event.target.closest('[data-add-product]')) addToCart(products.find(product => product.id === Number(event.target.closest('[data-add-product]').dataset.addProduct)))
+  if (productId) showProduct(products.find(product => String(product.id) === String(productId)))
+  if (event.target.closest('[data-add-product]')) addToCart(products.find(product => String(product.id) === String(event.target.closest('[data-add-product]').dataset.addProduct)))
   if (event.target.closest('[data-service]')) showService(services.find(service => service.id === Number(event.target.closest('[data-service]').dataset.service)))
   if (event.target.closest('[data-quantity]')) { const button = event.target.closest('[data-quantity]'); const item = state.cart.find(entry => entry.cartItemId === button.dataset.quantity); item.quantity += Number(button.dataset.change); if (item.quantity < 1) state.cart = state.cart.filter(entry => entry.cartItemId !== item.cartItemId); saveCart(); if (isCartRoute) renderApp(); else showCart(); updateCartCount() }
   if (event.target.closest('[data-remove]')) { state.cart = state.cart.filter(item => item.cartItemId !== event.target.closest('[data-remove]').dataset.remove); saveCart(); if (isCartRoute) renderApp(); else showCart(); updateCartCount() }
@@ -369,7 +465,23 @@ document.addEventListener('click', event => {
   if (action === 'look-next') changeLook(1)
   if (action === 'consultation') showConsultation()
   if (action === 'admin-change-number') { state.adminNumber = ''; state.adminData = null; renderApp() }
-  if (action === 'admin-logout') { postAdmin('logout').finally(() => { state.adminNumber = ''; state.adminData = null; renderApp() }) }
+  if (action === 'admin-logout') { postAdmin('logout').finally(() => { state.adminNumber = ''; state.adminPassword = ''; state.adminData = null; state.adminProducts = []; state.adminSettings = null; renderApp() }) }
+  if (event.target.closest('[data-product-delete]')) {
+    if (!window.confirm('Delete this product and its uploaded photo?')) return
+    fetch('/api/product/delete-product', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: event.target.closest('[data-product-delete]').dataset.productDelete }) }).then(response => response.json()).then(async result => { if (!result.success) throw new Error(result.message); await refreshAdmin(); await loadPublicContent(); notify('Product and uploaded photo deleted.') }).catch(error => notify(error.message))
+  }
+  if (event.target.closest('[data-look-delete]')) {
+    if (!window.confirm('Delete this lookbook photo?')) return
+    postAdmin('looks', { lookId: event.target.closest('[data-look-delete]').dataset.lookDelete }, 'DELETE').then(async result => { if (!result.success) throw new Error(result.message); await refreshAdmin(); await loadPublicContent(); renderApp() }).catch(error => notify(error.message))
+  }
+  if (event.target.closest('[data-clear-looks]')) {
+    if (!window.confirm('Delete every lookbook photo? This cannot be undone.')) return
+    postAdmin('looks/clear', {}, 'DELETE').then(async result => { if (!result.success) throw new Error(result.message); await refreshAdmin(); await loadPublicContent(); renderApp() }).catch(error => notify(error.message))
+  }
+  if (event.target.closest('[data-clear-products]')) {
+    if (!window.confirm('Delete every product and uploaded product photo? This cannot be undone.')) return
+    postAdmin('products/clear', {}, 'DELETE').then(async result => { if (!result.success) throw new Error(result.message); await refreshAdmin(); await loadPublicContent(); notify('All catalog products and uploaded photos deleted.') }).catch(error => notify(error.message))
+  }
   if (action === 'checkout') showCheckout()
   if (action === 'scroll-products') document.querySelector('#product-track').scrollBy({ left: event.target.closest('[data-direction]').dataset.direction === 'left' ? -340 : 340, behavior: 'smooth' })
 })
@@ -382,31 +494,75 @@ document.addEventListener('submit', async event => {
   const data = Object.fromEntries(new FormData(form))
   try {
     if (form.dataset.form === 'login' || form.dataset.form === 'signup') {
-      const result = await postAuth(form.dataset.form === 'login' ? 'login' : 'register', data)
+      const result = await postAuth(form.dataset.form === 'login' ? 'login' : 'signup', data)
       if (!result.success) throw new Error(result.message)
-      window.location.hash = '#/'
-      renderApp()
+      navigateTo('/')
       notify(form.dataset.form === 'login' ? 'Welcome back.' : 'Your account has been created.')
       return
     }
     if (form.dataset.form === 'admin-request') {
-      const result = await postAdmin('request-code', { number: data.number })
+      const result = await postAdmin('request-code', { number: data.number, password: data.password })
       if (!result.success) throw new Error(result.message)
       state.adminNumber = data.number
-      renderApp()
+      state.adminPassword = ''
+      if (getCurrentRoute() !== 'admin') renderApp()
+      else renderApp()
       return
     }
     if (form.dataset.form === 'admin-verify') {
       const result = await postAdmin('verify-code', { number: state.adminNumber, code: data.code })
       if (!result.success) throw new Error(result.message)
-      const dashboard = await getAdminDashboard()
-      if (!dashboard.success) throw new Error(dashboard.message)
-      state.adminData = dashboard
-      renderApp()
+      await loadAdminData()
+      navigateTo('/admin/dashboard')
       return
     }
-    if (form.dataset.form === 'checkout') { await postOrder('create-order', { orderData: { customer: data, items: state.cart, total: cartTotal(), paymentRef: 'pending', status: 'pending' } }); state.cart = []; saveCart(); updateCartCount() }
-    if (form.dataset.form === 'service') await postOrder('create-orderA', { formData: data })
+    if (form.dataset.form === 'admin-product') {
+      const image = await fileToDataUrl(form.elements.photo.files[0])
+      const category = categoryMeta.find(item => item.slug === data.category)
+      const result = await fetch('/api/product/create-product', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: data.name, price: Number(data.price), quantity: Number(data.quantity), image, description: data.description, category: category.label, slug: category.slug }) }).then(response => response.json())
+      if (!result.success) throw new Error(result.message)
+      form.reset(); await refreshAdmin(); await loadPublicContent(); notify('Product added.')
+      return
+    }
+    if (form.dataset.form === 'admin-product-update') {
+      const category = categoryMeta.find(item => item.slug === data.category)
+      const productImage = form.elements.photo.files[0] ? await fileToDataUrl(form.elements.photo.files[0]) : undefined
+      const result = await fetch('/api/product/update-product', { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: form.dataset.productId, name: data.name, price: Number(data.price), quantity: Number(data.quantity), description: data.description, category: category.label, slug: category.slug, productImage }) }).then(response => response.json())
+      if (!result.success) throw new Error(result.message)
+      await refreshAdmin(); await loadPublicContent(); notify('Product updated.')
+      return
+    }
+    if (form.dataset.form === 'admin-look') {
+      const image = await fileToDataUrl(form.elements.photo.files[0])
+      const result = await postAdmin('looks', { title: data.title, description: data.description, image })
+      if (!result.success) throw new Error(result.message)
+      form.reset(); await refreshAdmin(); await loadPublicContent(); notify('Lookbook photo added.')
+      return
+    }
+    if (form.dataset.form === 'admin-colors') {
+      const result = await postAdmin('site-settings', data, 'PUT')
+      if (!result.success) throw new Error(result.message)
+      state.adminSettings = result.settings
+      await loadPublicContent(); renderApp(); notify('Website colors saved.')
+      return
+    }
+    if (form.dataset.form === 'track-order') {
+      const result = await fetch(`/api/admin/track/${encodeURIComponent(data.trackingId)}`).then(response => response.json())
+      const output = document.querySelector('#tracking-result')
+      if (!result.success) throw new Error(result.message)
+      output.textContent = `${result.order.itemName} · ${result.order.status} · ${result.order.trackingId || data.trackingId}`
+      return
+    }
+    if (form.dataset.form === 'checkout') {
+      const result = await postOrder('create-order', { orderData: { customer: data, items: state.cart, total: cartTotal(), paymentRef: 'pending', status: 'pending' } })
+      if (!result.success) throw new Error(result.message || 'Could not place order')
+      state.cart = []; saveCart(); updateCartCount(); closeModal(); notify(`Order placed. Tracking number: ${result.trackingId}`); return
+    }
+    if (form.dataset.form === 'service') {
+      const result = await postOrder('create-orderA', { formData: data })
+      if (!result.success) throw new Error(result.message || 'Could not request booking')
+      closeModal(); notify(`Booking requested. Tracking number: ${result.trackingId}`); return
+    }
     if (form.dataset.form === 'consultation') {
       const file = form.elements.photo?.files?.[0]
       const photo = file ? await fileToDataUrl(file) : ''
@@ -431,13 +587,31 @@ document.addEventListener('submit', async event => {
       const authMessage = document.querySelector('#auth-message')
       if (message) message.textContent = error.message
       if (authMessage) authMessage.textContent = error.message
+      notify(error.message)
       return
     }
+    if (form.dataset.form.startsWith('admin-')) { const message = document.querySelector('#admin-message'); if (message) message.textContent = error.message; else notify(error.message); return }
+    if (form.dataset.form === 'track-order') { const output = document.querySelector('#tracking-result'); if (output) output.textContent = error.message; return }
     console.error(error); closeModal(); notify('Request saved. We will contact you shortly.')
   }
 })
 
+document.addEventListener('change', async event => {
+  const selector = event.target.closest('[data-tracking-id]')
+  if (!selector) return
+  try {
+    const result = await postAdmin('tracking', { orderId: selector.dataset.trackingId, type: selector.dataset.trackingKind, status: selector.value }, 'PATCH')
+    if (!result.success) throw new Error(result.message)
+    notify(`Tracking ${result.order.trackingId || result.order._id} updated.`)
+  } catch (error) {
+    notify(error.message)
+    await refreshAdmin()
+  }
+})
+
 window.addEventListener('hashchange', renderApp)
+window.addEventListener('popstate', renderApp)
 
 renderApp()
+loadPublicContent()
 window.addEventListener('scroll', () => document.querySelector('#site-header')?.classList.toggle('scrolled', window.scrollY > 24))

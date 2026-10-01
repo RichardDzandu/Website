@@ -1,5 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
-:root { --accent: #e94f70; --ink: #171516; --muted: #777174; --paper: #f7f3f1; --line: rgba(23,21,22,.14); --panel: #fff; }
+:root { --accent: #e47c93; --ink: #39212d; --muted: #777174; --paper: #f7f3f1; --line: rgba(23,21,22,.14); --panel: #fff; }
 :root.dark { --ink: #f5f1ef; --muted: #aaa2a2; --paper: #151314; --line: rgba(255,255,255,.15); --panel: #211e1f; }
 
 * { box-sizing: border-box; }
@@ -16,7 +16,7 @@ a { color: inherit; text-decoration: none; }
 
 button, input, select { font: inherit; }
 
-button { border: 0; cursor: pointer; }
+button { border: 0; cursor: pointer; border-radius: 20px;}
 
 .site-header { align-items: center; display: flex; justify-content: space-between; left: 0; padding: 23px clamp(20px, 5vw, 76px); position: fixed; right: 0; top: 0; transition: background .25s, border .25s; z-index: 10; }
 
@@ -104,6 +104,34 @@ nav { display: flex; gap: clamp(12px, 2vw, 28px); font-size: 11px; font-weight: 
 .admin-table th, .admin-table td { border-bottom: 1px solid var(--line); padding: 14px 10px; text-align: left; }
 .admin-table th { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 400; letter-spacing: .1em; text-transform: uppercase; }
 .admin-table td { font-size: 13px; }
+.admin-table select { background: var(--paper); border: 1px solid var(--line); color: var(--ink); padding: 8px; }
+.admin-section-title { border-top: 1px solid var(--line); font-size: 25px; margin: 48px 0 18px; padding-top: 26px; }
+.admin-product-form { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 0 22px; }
+.admin-product-form input[type="file"], .admin-product-form textarea, .admin-product-form button { grid-column: 1 / -1; }
+.admin-product-form textarea, .admin-product-edit textarea { background: var(--paper); border: 1px solid var(--line); color: var(--ink); font: inherit; min-height: 86px; padding: 13px; resize: vertical; }
+.admin-product-form select, .admin-product-edit select, .admin-product-edit input { background: var(--paper); border: 1px solid var(--line); color: var(--ink); min-width: 0; padding: 12px; }
+.admin-toolbar { align-items: center; display: flex; justify-content: space-between; margin: 20px 0 10px; }
+.admin-toolbar span { color: var(--muted); font-size: 12px; }
+.admin-toolbar .admin-secondary, .admin-photo-row .admin-secondary { border: 1px solid var(--line); margin: 0; padding: 9px 12px; text-decoration: none; }
+.admin-product-list, .admin-look-list { display: grid; gap: 10px; }
+.admin-product-edit { align-items: center; background: var(--paper); border: 1px solid var(--line); display: grid; gap: 10px; grid-template-columns: 64px minmax(130px, 1fr) 100px 90px minmax(130px, .8fr) auto auto; padding: 10px; }
+.admin-product-edit img, .admin-photo-row img { height: 58px; object-fit: cover; width: 58px; }
+.admin-product-edit textarea { grid-column: 2 / 6; }
+.admin-product-edit .admin-secondary { background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; text-decoration: underline; }
+.admin-photo-row { align-items: center; background: var(--paper); border: 1px solid var(--line); display: flex; gap: 14px; padding: 10px; }
+.admin-photo-row span { flex: 1; font-size: 13px; }
+.admin-color-form { align-items: end; display: flex; flex-wrap: wrap; gap: 16px; }
+.admin-color-form label { color: var(--muted); display: grid; font-size: 12px; gap: 8px; }
+.admin-color-form input { background: transparent; border: 1px solid var(--line); height: 42px; padding: 4px; width: 70px; }
+.admin-login-inline { border-top: 1px solid var(--line); margin-top: 36px; padding-top: 28px; }
+.admin-login-inline h2 { font-size: 27px; margin: 10px 0; }
+.admin-login-inline > p { color: var(--muted); font-size: 13px; }
+.tracking-section { align-items: center; background: var(--panel); display: flex; gap: 50px; justify-content: space-between; }
+.tracking-copy h2 { font-size: clamp(36px, 5vw, 58px); margin: 10px 0; }
+.tracking-copy p { color: var(--muted); }
+.tracking-form { display: grid; flex: 0 1 480px; gap: 10px; grid-template-columns: minmax(0, 1fr) auto; }
+.tracking-form input { background: var(--paper); border: 1px solid var(--line); color: var(--ink); min-width: 0; padding: 15px; }
+.tracking-form p { color: var(--accent); grid-column: 1 / -1; min-height: 20px; }
 
 .auth-page { align-items: center; display: flex; justify-content: center; min-height: 100vh; padding: 30px; }
 .auth-panel { background: var(--panel); border: 1px solid var(--line); max-width: 520px; padding: clamp(24px, 5vw, 48px); width: 100%; }
@@ -148,6 +176,10 @@ footer { background: var(--ink); color: var(--paper); display: grid; gap: 35px; 
   .category-hero-copy { max-width: 560px; }
   .cart-grid { grid-template-columns: 1fr; }
   .cart-page { padding-top: 105px; }
+  .admin-product-edit { grid-template-columns: 58px minmax(0, 1fr) 1fr; }
+  .admin-product-edit img { grid-row: span 2; }
+  .admin-product-edit textarea { grid-column: 2 / -1; }
+  .tracking-section { align-items: stretch; flex-direction: column; gap: 20px; }
 }
 
 @media (max-width: 520px) {
@@ -187,6 +219,14 @@ footer { background: var(--ink); color: var(--paper); display: grid; gap: 35px; 
   .cart-items-panel, .cart-summary { padding: 18px; }
   .item-request-page { padding: 16px; }
   .item-request-form { padding: 24px 18px; }
+  .admin-product-form { grid-template-columns: 1fr; }
+  .admin-product-form > * { grid-column: 1 !important; }
+  .admin-product-edit { grid-template-columns: 52px minmax(0, 1fr); }
+  .admin-product-edit img { height: 48px; width: 48px; }
+  .admin-product-edit > input, .admin-product-edit > select, .admin-product-edit > textarea, .admin-product-edit > button { grid-column: 2; }
+  .admin-color-form { align-items: start; flex-direction: column; }
+  .tracking-form { grid-template-columns: 1fr; }
+  .tracking-form p { grid-column: 1; }
   .admin-page { padding: 16px; }
   .admin-heading { align-items: stretch; flex-direction: column; }
   .admin-heading .admin-secondary { align-self: start; }

@@ -5,31 +5,37 @@ import transporter from '../config/nodemailer.js';
 import { EMAIL_VERIFY_TEMPLATE, PASSWORD_RESET_TEMPLATE, WELCOME_EMAIL_TEMPLATE } from '../config/emailTemplates.js';
 
 //Register user
-export const register = async (req, res)=>{
+export const register = async (req, res) => {
+    const body = req.body || {};
+    const { name, password, number } = body;
+    const email = String(body.email || '').trim().toLowerCase();
 
-    const {name, password, number} = req.body;
-    const email = String(req.body.email || '').trim().toLowerCase();
+    console.info('[auth.signup] request fields', Object.keys(body).sort());
 
-    if(!name || !email || !password || !number){
-        return res.status(400).json({success: false, message: 'Missing Details'})
+    if (typeof name !== 'string' || !name.trim() || !email || !password || typeof number !== 'string' || !number.trim()) {
+        return res.status(400).json({ success: false, message: 'Missing Details' });
     }
-    if(String(password).length < 8){
-        return res.status(400).json({success: false, message: 'Password must be at least 8 characters'})
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ success: false, message: 'Enter a valid email address' });
     }
-    try{
-        const existingUser = await userModel.findOne({email})
+    if (String(password).length < 8) {
+        return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
+    }
+    if (!process.env.JWT_SECRET) {
+        return res.status(503).json({ success: false, message: 'Authentication is not configured' });
+    }
 
-        if(existingUser){
-            return res.json({ success: false, message: 'User already exists'});
+    try {
+        const existingUser = await userModel.findOne({ email });
+        if (existingUser) {
+            return res.status(409).json({ success: false, message: 'An account with this email already exists' });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        const user = new userModel({name, email, number, password: hashedPassword});
+        const user = new userModel({ name: name.trim(), email, number: number.trim(), password: hashedPassword });
         await user.save();
 
-        const token = jwt.sign({id: user._id}, process.env.JWT_SECRET, {expiresIn: '7d'});
-
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
         res.cookie('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -37,65 +43,58 @@ export const register = async (req, res)=>{
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
 
-        //Sending welcome email
         const mailOptions = {
             from: process.env.SENDER_EMAIL,
             to: email,
             subject: 'Welcome to toKenPop',
-            html: WELCOME_EMAIL_TEMPLATE.replace("{{user.name}}", user.name)
-        }
-
+            html: WELCOME_EMAIL_TEMPLATE.replace('{{user.name}}', user.name)
+        };
         try {
             await transporter.sendMail(mailOptions);
         } catch (mailError) {
             console.error('Welcome email failed:', mailError.message);
         }
 
-        return res.json({success: true});
-
-    }catch(error){
-        res.json({success: false, message: error.message});
+        return res.status(201).json({ success: true });
+    } catch (error) {
+        if (error.code === 11000) {
+            return res.status(409).json({ success: false, message: 'An account with this email already exists' });
+        }
+        console.error('[auth.signup] failed', error.name);
+        return res.status(500).json({ success: false, message: 'Could not create account' });
     }
-}
+};
 
 //Log in user
-export const login = async (req, res)=>{
+export const login = async (req, res) => {
     const email = String(req.body.email || '').trim().toLowerCase();
-    const {password} = req.body;
-
-    if(!email || !password){
-        return res.json({success: false, message: 'Email and Password required'});
+    const { password } = req.body;
+    if (!email || !password) {
+        return res.status(400).json({ success: false, message: 'Email and Password required' });
+    }
+    if (!process.env.JWT_SECRET) {
+        return res.status(503).json({ success: false, message: 'Authentication is not configured' });
     }
 
-    try{
-
-        const user = await userModel.findOne({email});
-
-        if(!user){
-            return res.json({success: false, message: 'Incorrect Password Or Username'});
+    try {
+        const user = await userModel.findOne({ email });
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return res.status(401).json({ success: false, message: 'Incorrect Password Or Username' });
         }
 
-        const isMatch = await bcrypt.compare(password, user.password);
-
-        if(!isMatch){
-            return res.json({success: false, message: 'Incorrect Password Or Username'});
-        }
-
-        const token = jwt.sign({id: user._id}, process.env.JWT_SECRET, {expiresIn: '7d'});
-
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
         res.cookie('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
-
-        return res.json({success: true});
-
-    }catch(error){
-        res.json({success: false, message: error.message});
+        return res.json({ success: true, role: 'customer' });
+    } catch (error) {
+        console.error('[auth.login] failed', error.name);
+        return res.status(500).json({ success: false, message: 'Could not sign in' });
     }
-}
+};
 
 //Log out user
 export const logout = async (req, res)=>{
