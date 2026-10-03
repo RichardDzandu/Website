@@ -1,7 +1,6 @@
-import './index.css'
-import sandalLookImage from '../photo_2026-09-27_16-26-10.jpg'
-import sandal from '../photo_2026-09-27_16-25-40.jpg'
-import bag from '../photo_2026-09-27_17-06-57.jpg'
+const sandalLookImage = './assets/photo_2026-09-27_16-26-10.jpg'
+const sandal = './assets/photo_2026-09-27_16-25-40.jpg'
+const bag = './assets/photo_2026-09-27_17-06-57.jpg'
 const categoryMeta = [
   { slug: 'womens-wear', label: "Women's Wear", blurb: 'Modern silhouettes, statement layers, and effortless comfort for everyday confidence.', hero: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=2070' },
   { slug: 'mens-wear', label: "Men's Wear", blurb: 'Refined essentials, tailored layers, and elevated basics built for everyday wear.', hero: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?q=80&w=2070' },
@@ -71,7 +70,6 @@ const state = {
 }
 
 const money = value => `GHS${Number(value).toFixed(2)}`
-const escapeHtml = value => String(value).replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[character]))
 const saveCart = () => localStorage.setItem(cartStorageKey, JSON.stringify(state.cart))
 const cartTotal = () => state.cart.reduce((total, item) => total + item.price * item.quantity, 0)
 const cartCount = () => state.cart.reduce((total, item) => total + item.quantity, 0)
@@ -92,267 +90,343 @@ function navigateTo(path) {
   renderApp()
 }
 
+function cloneTemplate(id) {
+  const source = document.getElementById(id)
+  if (!source) throw new Error(`Missing page template: ${id}`)
+  return source.content.cloneNode(true)
+}
+
+function renderFooter(home = false) {
+  const footer = cloneTemplate(home ? 'home-footer-template' : 'site-footer-template').firstElementChild
+  if (home) {
+    const links = footer.querySelector('[data-footer-categories]')
+    categoryMeta.forEach(category => {
+      const link = document.createElement('a')
+      link.href = `#/${category.slug}`
+      link.textContent = category.label
+      links.append(link)
+    })
+  }
+  return footer
+}
+
+function pageWithHeader(page, route, home = false) {
+  const output = document.createDocumentFragment()
+  output.append(renderNav(route), page, renderFooter(home))
+  return output
+}
+
 function productCards(categoryFilter = null) {
-  const list = categoryFilter ? products.filter(product => product.slug === categoryFilter) : products
-  return list.map(product => `
-    <article class="product-card" data-product="${product.id}">
-      <div class="product-image"><img src="${product.image}" alt="${escapeHtml(product.name)}" loading="lazy">${product.tag ? `<span class="tag">${product.tag}</span>` : ''}</div>
-      <div class="product-copy"><span class="eyebrow">${product.category}</span><h3>${product.name}</h3><strong>${money(product.price)}</strong></div>
-    </article>`).join('')
+  const list = Array.isArray(categoryFilter)
+    ? categoryFilter
+    : categoryFilter
+      ? products.filter(product => product.slug === categoryFilter)
+      : products
+  const cards = document.createDocumentFragment()
+  list.forEach(product => {
+    const card = cloneTemplate('product-card-template').firstElementChild
+    card.dataset.product = product.id
+    card.querySelector('img').src = product.image
+    card.querySelector('img').alt = product.name
+    card.querySelector('.product-category').textContent = product.category
+    card.querySelector('h3').textContent = product.name
+    card.querySelector('strong').textContent = money(product.price)
+    if (product.tag) {
+      const tag = card.querySelector('.tag')
+      tag.textContent = product.tag
+      tag.hidden = false
+    }
+    cards.append(card)
+  })
+  return cards
 }
 
 function renderNav(currentRoute = getCurrentRoute()) {
-  const navItems = [
-    { href: '#/', label: 'Home', slug: 'home' },
-    ...categoryMeta.map(category => ({ href: `#/${category.slug}`, label: category.label, slug: category.slug })),
-    { href: '#consultation', label: 'Item Request', slug: 'consultation' },
-    { href: '/login', label: 'Account', slug: 'login' },
-  ]
-
-  return `
-    <header class="site-header" id="site-header">
-      <a class="brand" href="#top">Berry's <span>Closet</span></a>
-      <nav>
-        ${navItems.map(item => `<a href="${item.href}" class="nav-link ${currentRoute === item.slug ? 'active' : ''}">${item.label}</a>`).join('')}
-      </nav>
-      <div class="header-actions">
-        <button class="icon-button" data-action="theme" aria-label="Toggle theme">${state.theme === 'dark' ? '☼' : '◐'}</button>
-        <button class="cart-button" data-action="cart" aria-label="Open shopping cart">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h2l2.3 9.1a1 1 0 0 0 1 .8h8.6a1 1 0 0 0 1-.8L20 7H7"/><circle cx="10" cy="18.5" r="1.2"/><circle cx="17" cy="18.5" r="1.2"/></svg>
-          <b id="cart-count">${cartCount()}</b>
-        </button>
-      </div>
-    </header>
-  `
+  const isHome = currentRoute === 'home'
+  const fragment = cloneTemplate(isHome ? 'home-header-template' : 'standard-header-template')
+  const header = fragment.querySelector('.site-header')
+  header.id = 'site-header'
+  header.querySelectorAll('[data-route-link]').forEach(link => {
+    if (link.dataset.routeLink === currentRoute) link.classList.add('active')
+  })
+  const categories = header.querySelector('[data-category-list]')
+  categoryMeta.forEach(category => {
+    const link = cloneTemplate('category-link-template').firstElementChild
+    link.href = `#/${category.slug}`
+    link.textContent = category.label
+    if (currentRoute === category.slug) link.classList.add('active')
+    categories.append(link)
+  })
+  header.querySelectorAll('#cart-count').forEach(count => { count.textContent = cartCount() })
+  header.querySelectorAll('[data-action="theme"]').forEach(button => { button.textContent = state.theme === 'dark' ? '☼' : '◐' })
+  return fragment
 }
 
 function renderHomePage() {
-  const lookbook = looks.length ? `<section class="section lookbook" id="lookbook"><div class="section-heading center"><div><span class="eyebrow">A visual diary</span><h2>Lookbook</h2></div></div><div class="lookbook-frame"><img id="lookbook-image" src="${looks[0].image}" alt="${escapeHtml(looks[0].title)}"><div class="lookbook-shade"></div><div class="lookbook-copy"><span class="eyebrow">01 / ${String(looks.length).padStart(2, '0')}</span><h3 id="lookbook-title">${escapeHtml(looks[0].title)}</h3><p id="lookbook-description">${escapeHtml(looks[0].description)}</p></div><button class="carousel-button prev" data-action="look-prev" aria-label="Previous look">←</button><button class="carousel-button next" data-action="look-next" aria-label="Next look">→</button></div></section>` : ''
-  return `
-    ${renderNav('home')}
-    <main id="top">
-      <section class="hero"><img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070" alt="Fashion editorial"><div class="hero-shade"></div><div class="hero-copy"><span class="eyebrow">New season / Accra</span><h1>Define your<br><em>signature look.</em></h1><p>Curated pieces and bespoke styling for the modern muse. Accra to the world.</p><div class="button-row"><a class="button button-accent" href="#/womens-wear">Shop collections</a><a class="button button-line" href="#consultation">Item request</a></div></div></section>
-      <section class="section collections" id="collections"><div class="section-heading"><div><span class="eyebrow">The edit / 20 pieces</span><h2>Collections</h2></div><div class="scroll-actions"><button class="icon-button" data-action="scroll-products" data-direction="left" aria-label="Scroll products left">←</button><button class="icon-button" data-action="scroll-products" data-direction="right" aria-label="Scroll products right">→</button></div></div><div class="product-track" id="product-track">${productCards()}</div></section>
-      ${lookbook}
-      <section class="section tracking-section"><div class="tracking-copy"><span class="eyebrow">Order updates</span><h2>Track your order</h2><p>Enter the tracking number from your order confirmation.</p></div><form class="tracking-form" data-form="track-order"><input name="trackingId" placeholder="Tracking number" required><button class="button button-accent">Track</button><p id="tracking-result" aria-live="polite"></p></form></section>
-      <section class="section services" id="services"><div class="section-heading center"><div><span class="eyebrow">What we do</span><h2>Rituals of beauty</h2><p>From everyday glow-ups to special occasions, we make your getting-ready ritual feel like an event.</p></div></div><div class="service-grid">${services.map(service => `<article class="service-card"><div class="service-image"><img src="${service.image}" alt="${service.title}" loading="lazy"><span>${service.icon}</span></div><div class="service-copy"><h3>${service.title}</h3><p>${service.description}</p><div class="service-meta"><strong>From ${money(service.price)}</strong><span>${service.duration}</span></div><button class="button button-dark" data-service="${service.id}">Book now</button></div></article>`).join('')}</div></section>
-      <section class="section consultation" id="consultation"><div class="consultation-panel"><span class="eyebrow">Item request</span><h2>Request an item</h2><p class="intro">Share the item you want and attach a photo so we know exactly what you need.</p><div class="detail-list"><div><b>01</b><span><strong>Your name</strong>Tell us who the request is from.</span></div><div><b>02</b><span><strong>Product name</strong>Write the exact item name or description.</span></div><div><b>03</b><span><strong>Image upload</strong>Upload a clear photo of the item for reference.</span></div></div><button class="button button-accent" data-action="consultation">Submit request</button></div></section>
-      <section class="newsletter"><div><span class="eyebrow">The Berry's list</span><h2>Good things, selectively sent.</h2><p>First access to drops, styling tips, and exclusive events in Accra.</p></div><form id="newsletter-form"><input type="email" name="email" placeholder="Your email address" required><button class="button button-dark">Subscribe</button></form></section>
-    </main>
-    <footer>
-      <div><a class="brand" href="#top">Berry's <span>Closet</span></a><p>Accra-based. Global style.</p></div>
-      <small>© 2026 Berry's Closet. All rights reserved.</small>
-    </footer>
-    <div id="modal-root"></div>
-  `
+  const categoryIcons = ['✦', '◇', '◌', '✧', '⌘']
+  const page = cloneTemplate('home-page-template').firstElementChild
+  const categoryStrip = page.querySelector('.home-category-strip')
+  categoryMeta.forEach((category, index) => {
+    const card = cloneTemplate('home-category-template').firstElementChild
+    card.href = `#/${category.slug}`
+    card.querySelector('.home-category-icon').textContent = categoryIcons[index]
+    card.querySelector('strong').textContent = category.label
+    categoryStrip.append(card)
+  })
+  const viewAll = cloneTemplate('home-category-template').firstElementChild
+  viewAll.classList.add('home-category-all')
+  viewAll.href = '#collections'
+  viewAll.querySelector('.home-category-icon').textContent = '＋'
+  viewAll.querySelector('strong').textContent = 'View all'
+  categoryStrip.append(viewAll)
+  page.querySelector('#product-track').append(productCards(products.slice(0, 5)))
+  const promoCards = [
+    { slug: 'womens-wear', eyebrow: 'The style edit', title: 'Find your signature look', link: 'Explore fashion' },
+    { slug: 'cosmetics', eyebrow: 'A little self-care', title: 'Make room for your glow', link: 'Explore beauty' },
+    { slug: 'gadgets', eyebrow: 'Everyday upgrades', title: 'Good things, thoughtfully picked', link: 'Explore gadgets' },
+  ]
+  promoCards.forEach(card => {
+    const promo = cloneTemplate('promo-card-template').firstElementChild
+    promo.href = `#/${card.slug}`
+    promo.style.setProperty('--promo-image', `url("${categoryMeta.find(item => item.slug === card.slug).hero}")`)
+    promo.querySelector('span').textContent = card.eyebrow
+    promo.querySelector('h3').textContent = card.title
+    promo.querySelector('strong').textContent = `${card.link} →`
+    page.querySelector('.home-promos').append(promo)
+  })
+  const serviceGrid = page.querySelector('.service-grid')
+  services.forEach(service => {
+    const card = cloneTemplate('service-card-template').firstElementChild
+    card.querySelector('img').src = service.image
+    card.querySelector('img').alt = service.title
+    card.querySelector('.service-image span').textContent = service.icon
+    card.querySelector('.service-copy h3').textContent = service.title
+    card.querySelector('.service-copy p').textContent = service.description
+    card.querySelector('.service-meta strong').textContent = `From ${money(service.price)}`
+    card.querySelector('.service-meta span').textContent = service.duration
+    card.querySelector('[data-service]').dataset.service = service.id
+    serviceGrid.append(card)
+  })
+  if (looks.length) {
+    const lookbook = cloneTemplate('lookbook-template').firstElementChild
+    page.querySelector('[data-lookbook-slot]').append(lookbook)
+    state.lookIndex = 0
+    const look = looks[0]
+    lookbook.querySelector('#lookbook-image').src = look.image
+    lookbook.querySelector('#lookbook-image').alt = look.title
+    lookbook.querySelector('#lookbook-title').textContent = look.title
+    lookbook.querySelector('#lookbook-description').textContent = look.description
+    lookbook.querySelector('.lookbook-copy .eyebrow').textContent = `01 / ${String(looks.length).padStart(2, '0')}`
+  }
+  return pageWithHeader(page, 'home', true)
 }
 
 function renderCartPage() {
-  const items = state.cart
-
-  return `
-    ${renderNav('cart')}
-    <main class="cart-page" id="top">
-      <div class="cart-shell">
-        <div class="section-heading cart-header">
-          <div>
-            <span class="eyebrow">Your basket</span>
-            <h2>Shopping cart</h2>
-          </div>
-        </div>
-
-        <div class="cart-grid">
-          <section class="cart-items-panel">
-            ${items.length ? items.map(item => `
-              <article class="cart-page-item">
-                <img src="${item.image}" alt="${item.name}">
-                <div class="cart-page-copy">
-                  <div>
-                    <h3>${item.name}</h3>
-                    <p>${item.category}</p>
-                  </div>
-                  <strong>${money(item.price)}</strong>
-                </div>
-                <div class="cart-page-controls">
-                  <div class="quantity">
-                    <button data-quantity="${item.cartItemId}" data-change="-1">−</button>
-                    <span>${item.quantity}</span>
-                    <button data-quantity="${item.cartItemId}" data-change="1">+</button>
-                  </div>
-                  <button class="remove" data-remove="${item.cartItemId}">Remove</button>
-                </div>
-              </article>
-            `).join('') : `<div class="empty-cart"><p>Your cart is empty. Add a few items from the collection.</p><a class="button button-accent" href="#/womens-wear">Continue shopping</a></div>`}
-          </section>
-
-          <aside class="cart-summary">
-            <span class="eyebrow">Summary</span>
-            <h3>Order total</h3>
-            <div class="cart-total-row"><span>Subtotal</span><strong>${money(cartTotal())}</strong></div>
-            <div class="cart-total-row"><span>Delivery</span><strong>GHS0.00</strong></div>
-            <div class="cart-total-row total"><span>Total</span><strong>${money(cartTotal())}</strong></div>
-            <button class="button button-accent" data-action="checkout" ${items.length ? '' : 'disabled'}>Checkout</button>
-          </aside>
-        </div>
-      </div>
-    </main>
-
-    <footer>
-      <div><a class="brand" href="#top">Berry's <span>Closet</span></a><p>Accra-based. Global style.</p></div>
-      <div><b>Shop</b><a href="#/womens-wear">Women's Wear</a><a href="#/mens-wear">Men's Wear</a><a href="#/cosmetics">Cosmetics</a></div>
-      <div><b>More</b><a href="#/food">Food</a><a href="#/gadgets">Gadgets</a><a href="#consultation">Item Request</a></div>
-      <small>© 2026 Berry's Closet. All rights reserved.</small>
-    </footer>
-    <div id="modal-root"></div>
-  `
+  const page = cloneTemplate('cart-page-template').firstElementChild
+  const panel = page.querySelector('.cart-items-panel')
+  if (state.cart.length) {
+    state.cart.forEach(item => {
+      const row = cloneTemplate('cart-page-item-template').firstElementChild
+      row.querySelector('img').src = item.image
+      row.querySelector('img').alt = item.name
+      row.querySelector('h3').textContent = item.name
+      row.querySelector('p').textContent = item.category
+      row.querySelector('[data-price]').textContent = money(item.price)
+      row.querySelector('.quantity span').textContent = item.quantity
+      row.querySelectorAll('[data-change]').forEach(button => {
+        button.dataset.quantity = item.cartItemId
+      })
+      row.querySelector('.remove').dataset.remove = item.cartItemId
+      panel.append(row)
+    })
+  } else {
+    panel.append(cloneTemplate('empty-cart-template'))
+  }
+  page.querySelector('[data-subtotal]').textContent = money(cartTotal())
+  page.querySelector('[data-total]').textContent = money(cartTotal())
+  page.querySelector('[data-action="checkout"]').disabled = !state.cart.length
+  return pageWithHeader(page, 'cart')
 }
 
 function renderCategoryPage(slug) {
   const category = categoryMeta.find(item => item.slug === slug) || categoryMeta[0]
   const items = products.filter(product => product.slug === slug)
-
-  return `
-    ${renderNav(slug)}
-    <main class="category-page" id="top">
-      <section class="category-hero" style="background-image: linear-gradient(90deg, rgba(0,0,0,.68), rgba(0,0,0,.15)), url('${category.hero}');">
-        <div class="category-hero-copy">
-          <span class="eyebrow">Curated edit</span>
-          <h1>${category.label}</h1>
-          <p>${category.blurb}</p>
-          <div class="button-row">
-            <a class="button button-accent" href="#collections">Browse ${category.label}</a>
-            <a class="button button-line" href="#consultation">Item request</a>
-          </div>
-        </div>
-      </section>
-
-      <section class="section category-content">
-        <div class="section-heading center">
-          <div>
-            <span class="eyebrow">Featured picks</span>
-            <h2>${category.label}</h2>
-          </div>
-        </div>
-        <div class="category-grid">${items.map(product => `
-          <article class="product-card category-product" data-product="${product.id}">
-            <div class="product-image"><img src="${product.image}" alt="${escapeHtml(product.name)}" loading="lazy">${product.tag ? `<span class="tag">${product.tag}</span>` : ''}</div>
-            <div class="product-copy"><span class="eyebrow">${product.category}</span><h3>${product.name}</h3><strong>${money(product.price)}</strong></div>
-          </article>
-        `).join('')}</div>
-      </section>
-    </main>
-    <footer>
-      <div><a class="brand" href="#top">Berry's <span>Closet</span></a><p>Accra-based. Global style.</p></div>
-      <small>© 2026 Berry's Closet. All rights reserved.</small>
-    </footer>
-    <div id="modal-root"></div>
-  `
+  const page = cloneTemplate('category-page-template').firstElementChild
+  const hero = page.querySelector('.category-hero')
+  hero.style.backgroundImage = `linear-gradient(90deg, rgba(0,0,0,.68), rgba(0,0,0,.15)), url("${category.hero}")`
+  page.querySelector('[data-category-name]').textContent = category.label
+  page.querySelector('[data-category-blurb]').textContent = category.blurb
+  page.querySelector('[data-category-browse]').textContent = `Browse ${category.label}`
+  page.querySelector('[data-category-heading]').textContent = category.label
+  const grid = page.querySelector('.category-grid')
+  grid.append(productCards(items))
+  grid.querySelectorAll('.product-card').forEach(card => card.classList.add('category-product'))
+  return pageWithHeader(page, slug)
 }
 
 function renderItemRequestPage() {
-  return `
-    <main class="item-request-page">
-      <form class="booking-form item-request-form" data-form="consultation">
-        <input name="name" placeholder="Your full name" required>
-        <input name="productName" placeholder="Product name" required>
-        <input name="photo" type="file" accept="image/*" required>
-        <button class="button button-accent">Send request</button>
-      </form>
-    </main>
-  `
+  return cloneTemplate('item-request-page-template')
 }
 
 function renderAdminPage() {
   if (state.adminData) return renderAdminDashboard(state.adminData)
 
   const isCodeStep = Boolean(state.adminNumber)
-  return `
-    <main class="admin-page">
-      <section class="admin-panel">
-        <span class="eyebrow">Restricted access</span>
-        <h1>Admin portal</h1>
-        <p>${isCodeStep ? `Enter the code sent to ${escapeHtml(state.adminNumber)}.` : 'Enter your authorized number and admin password. A one-time code is required every time.'}</p>
-        <form class="admin-form" data-form="${isCodeStep ? 'admin-verify' : 'admin-request'}">
-          ${isCodeStep ? `<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="6-digit code" required>` : '<input name="number" type="tel" autocomplete="tel" placeholder="Mobile number" required><input name="password" type="password" autocomplete="current-password" placeholder="Admin password" required>'}
-          <button class="button button-accent">${isCodeStep ? 'Verify code' : 'Continue to OTP'}</button>
-        </form>
-        ${isCodeStep ? '<button class="admin-secondary" data-action="admin-change-number">Use a different number</button>' : ''}
-        <p class="admin-message" id="admin-message" aria-live="polite"></p>
-      </section>
-    </main>
-  `
+  const page = cloneTemplate('admin-login-template').firstElementChild
+  const fields = page.querySelector('[data-admin-fields]')
+  const form = page.querySelector('form')
+  form.dataset.form = isCodeStep ? 'admin-verify' : 'admin-request'
+  page.querySelector('[data-admin-instructions]').textContent = isCodeStep
+    ? `Enter the code sent to ${state.adminNumber}.`
+    : 'Enter your authorized number and admin password. A one-time code is required every time.'
+  page.querySelector('form button').textContent = isCodeStep ? 'Verify code' : 'Continue to OTP'
+  if (isCodeStep) {
+    fields.append(cloneTemplate('admin-field-code-template'))
+    page.querySelector('[data-action="admin-change-number"]').hidden = false
+  } else {
+    fields.append(cloneTemplate('admin-field-number-template'), cloneTemplate('admin-field-password-template'))
+    page.querySelector('[data-action="admin-change-number"]').hidden = true
+  }
+  return page
 }
 
 function renderAdminDashboard(data) {
   const rows = [...data.itemRequests.map(item => ({ type: 'Item request', customer: item.name, item: item.productName, status: item.status, date: item.createdAt || item.date })), ...data.itemOrders.map(item => ({ id: item._id, trackingId: item.trackingId || item._id, kind: 'item', type: 'Order', customer: item.customerName, item: item.itemName, status: item.status, date: item.createdAt })), ...data.serviceOrders.map(item => ({ id: item._id, trackingId: item.trackingId || item._id, kind: 'service', type: 'Service', customer: item.clientName, item: item.serviceName, status: item.status, date: item.createdAt || item.date }))]
   const settings = state.adminSettings || { accent: '#e94f70', paper: '#f7f3f1', ink: '#171516', looks: [] }
   const statuses = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled']
-  return `
-    <main class="admin-page admin-dashboard">
-      <section class="admin-panel admin-panel-wide">
-        <div class="admin-heading"><div><span class="eyebrow">Restricted access</span><h1>Admin dashboard</h1></div><button class="admin-secondary" data-action="admin-logout">Log out</button></div>
-        <div class="admin-stats"><div><strong>${data.itemRequests.length}</strong><span>Item requests</span></div><div><strong>${data.itemOrders.length}</strong><span>Orders</span></div><div><strong>${data.serviceOrders.length}</strong><span>Services</span></div></div>
-        <h2 class="admin-section-title">Order tracking</h2>
-        <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Tracking ID</th><th>Type</th><th>Customer</th><th>Order</th><th>Status</th><th>Date</th></tr></thead><tbody>${rows.length ? rows.map(row => `<tr><td>${escapeHtml(row.trackingId || '')}</td><td>${row.type}</td><td>${escapeHtml(row.customer || 'Unknown')}</td><td>${escapeHtml(row.item || '')}</td><td>${row.id ? `<select data-tracking-id="${escapeHtml(row.id)}" data-tracking-kind="${row.kind}">${statuses.map(status => `<option ${String(row.status).toLowerCase() === status.toLowerCase() ? 'selected' : ''}>${status}</option>`).join('')}</select>` : escapeHtml(row.status || 'Pending')}</td><td>${row.date ? new Date(row.date).toLocaleDateString() : '-'}</td></tr>`).join('') : '<tr><td colspan="6">No records yet.</td></tr>'}</tbody></table></div>
-        <h2 class="admin-section-title">Products</h2>
-        <form class="admin-form admin-product-form" data-form="admin-product"><input name="name" placeholder="Product name" required><input name="price" type="number" min="0" step="0.01" placeholder="Price (GHS)" required><input name="quantity" type="number" min="1" step="1" placeholder="Stock quantity" required><select name="category"><option value="womens-wear">Women's Wear</option><option value="mens-wear">Men's Wear</option><option value="cosmetics">Cosmetics</option><option value="food">Food</option><option value="gadgets">Gadgets</option></select><input name="photo" type="file" accept="image/*" required><textarea name="description" placeholder="Description"></textarea><button class="button button-accent">Add product</button></form>
-        <div class="admin-toolbar"><span>${state.adminProducts.length} products</span><button class="admin-secondary" data-clear-products>Delete all products</button></div>
-        <div class="admin-product-list">${state.adminProducts.map(product => `<form class="admin-product-edit" data-form="admin-product-update" data-product-id="${escapeHtml(product._id)}"><img src="${escapeHtml(product.image || '')}" alt=""><input name="name" value="${escapeHtml(product.name)}" required><input name="price" type="number" min="0" step="0.01" value="${Number(product.price)}" required><input name="quantity" type="number" min="1" value="${product.quantity}" required><select name="category">${categoryMeta.map(category => `<option value="${category.slug}" ${product.slug === category.slug ? 'selected' : ''}>${category.label}</option>`).join('')}</select><textarea name="description" placeholder="Description">${escapeHtml(product.description || '')}</textarea><input name="photo" type="file" accept="image/*"><button class="admin-secondary">Save</button><button type="button" class="admin-secondary" data-product-delete="${escapeHtml(product._id)}">Delete</button></form>`).join('') || '<p>No saved products yet.</p>'}</div>
-        <h2 class="admin-section-title">Lookbook photos</h2>
-        <form class="admin-form admin-product-form" data-form="admin-look"><input name="title" placeholder="Photo title" required><input name="description" placeholder="Short caption"><input name="photo" type="file" accept="image/*" required><button class="button button-accent">Add photo</button></form>
-        <div class="admin-toolbar"><span>${(settings.looks || []).length} photos</span><button class="admin-secondary" data-clear-looks>Delete all photos</button></div>
-        <div class="admin-look-list">${(settings.looks || []).map(look => `<div class="admin-photo-row"><img src="${escapeHtml(look.image)}" alt=""><span>${escapeHtml(look.title)}</span><button class="admin-secondary" data-look-delete="${escapeHtml(look._id)}">Delete</button></div>`).join('') || '<p>No lookbook photos.</p>'}</div>
-        <h2 class="admin-section-title">Website colors</h2>
-        <form class="admin-color-form" data-form="admin-colors"><label>Accent<input name="accent" type="color" value="${settings.accent}"></label><label>Background<input name="paper" type="color" value="${settings.paper}"></label><label>Text<input name="ink" type="color" value="${settings.ink}"></label><button class="button button-accent">Save colors</button></form>
-        <p class="admin-message" id="admin-message" aria-live="polite"></p>
-      </section>
-    </main>
-  `
+  const page = cloneTemplate('admin-dashboard-template').firstElementChild
+  page.querySelector('[data-request-count]').textContent = data.itemRequests.length
+  page.querySelector('[data-order-count]').textContent = data.itemOrders.length
+  page.querySelector('[data-service-count]').textContent = data.serviceOrders.length
+  const orderRows = page.querySelector('[data-order-rows]')
+  rows.forEach(row => {
+    const line = cloneTemplate('admin-order-row-template').firstElementChild
+    line.querySelector('[data-tracking-number]').textContent = row.trackingId || ''
+    line.querySelector('[data-type]').textContent = row.type
+    line.querySelector('[data-customer]').textContent = row.customer || 'Unknown'
+    line.querySelector('[data-item]').textContent = row.item || ''
+    const statusCell = line.querySelector('[data-status]')
+    if (row.id) {
+      const select = document.createElement('select')
+      select.dataset.trackingId = row.id
+      select.dataset.trackingKind = row.kind
+      statuses.forEach(status => {
+        const option = document.createElement('option')
+        option.value = status
+        option.textContent = status
+        option.selected = String(row.status).toLowerCase() === status.toLowerCase()
+        select.append(option)
+      })
+      statusCell.append(select)
+    } else statusCell.textContent = row.status || 'Pending'
+    line.querySelector('[data-date]').textContent = row.date ? new Date(row.date).toLocaleDateString() : '-'
+    orderRows.append(line)
+  })
+  if (!rows.length) {
+    const emptyRow = document.createElement('tr')
+    const emptyCell = document.createElement('td')
+    emptyCell.colSpan = 6
+    emptyCell.textContent = 'No records yet.'
+    emptyRow.append(emptyCell)
+    orderRows.append(emptyRow)
+  }
+  page.querySelectorAll('[data-category-options]').forEach(select => {
+    categoryMeta.forEach(category => {
+      const option = document.createElement('option')
+      option.value = category.slug
+      option.textContent = category.label
+      select.append(option)
+    })
+  })
+  page.querySelector('[data-product-count]').textContent = `${state.adminProducts.length} products`
+  const productList = page.querySelector('.admin-product-list')
+  state.adminProducts.forEach(product => {
+    const form = cloneTemplate('admin-product-edit-template').firstElementChild
+    form.dataset.productId = product._id
+    form.querySelector('img').src = product.image || ''
+    form.querySelector('img').alt = product.name
+    form.elements.name.value = product.name
+    form.elements.price.value = Number(product.price)
+    form.elements.quantity.value = product.quantity
+    form.elements.description.value = product.description || ''
+    const select = form.elements.category
+    categoryMeta.forEach(category => {
+      const option = document.createElement('option')
+      option.value = category.slug
+      option.textContent = category.label
+      option.selected = product.slug === category.slug
+      select.append(option)
+    })
+    form.querySelector('button[type="button"]').dataset.productDelete = product._id
+    productList.append(form)
+  })
+  if (!state.adminProducts.length) {
+    const empty = cloneTemplate('admin-empty-row-template').firstElementChild
+    empty.textContent = 'No saved products yet.'
+    productList.append(empty)
+  }
+  page.querySelector('[data-look-count]').textContent = `${(settings.looks || []).length} photos`
+  const lookList = page.querySelector('.admin-look-list')
+  ;(settings.looks || []).forEach(look => {
+    const row = cloneTemplate('admin-look-row-template').firstElementChild
+    row.querySelector('img').src = look.image
+    row.querySelector('img').alt = look.title
+    row.querySelector('span').textContent = look.title
+    row.querySelector('button').dataset.lookDelete = look._id
+    lookList.append(row)
+  })
+  if (!(settings.looks || []).length) {
+    const empty = cloneTemplate('admin-empty-row-template').firstElementChild
+    empty.textContent = 'No lookbook photos.'
+    lookList.append(empty)
+  }
+  page.querySelector('[name="accent"]').value = settings.accent
+  page.querySelector('[name="paper"]').value = settings.paper
+  page.querySelector('[name="ink"]').value = settings.ink
+  return page
 }
 
 function renderAuthPage(mode = 'login') {
   const isLogin = mode === 'login'
-  return `
-    <main class="auth-page">
-      <section class="auth-panel">
-        <a class="brand" href="#/">Berry's <span>Closet</span></a>
-        <span class="eyebrow">Your account</span>
-        <h1>${isLogin ? 'Welcome back.' : 'Create your account.'}</h1>
-        <p>${isLogin ? 'Sign in to continue shopping.' : 'Join Berry’s Closet to keep your details ready for checkout.'}</p>
-        <form class="auth-form" data-form="${isLogin ? 'login' : 'signup'}">
-          ${isLogin ? '' : '<input name="name" placeholder="Full name" autocomplete="name" required>'}
-          ${isLogin ? '' : '<input name="number" type="tel" placeholder="Mobile number" autocomplete="tel" required>'}
-          <input name="email" type="email" placeholder="Email address" autocomplete="email" required>
-          <input name="password" type="password" placeholder="Password" autocomplete="${isLogin ? 'current-password' : 'new-password'}" minlength="8" required>
-          <button class="button button-accent">${isLogin ? 'Log in' : 'Sign up'}</button>
-        </form>
-        <p class="auth-message" id="auth-message" aria-live="polite"></p>
-        <a class="auth-switch" href="/${isLogin ? 'signup' : 'login'}">${isLogin ? 'Need an account? Sign up' : 'Already have an account? Log in'}</a>
-      </section>
-    </main>
-  `
+  const page = cloneTemplate('auth-page-template').firstElementChild
+  page.querySelector('[data-auth-heading]').textContent = isLogin ? 'Welcome back.' : 'Create your account.'
+  page.querySelector('[data-auth-description]').textContent = isLogin
+    ? 'Sign in to continue shopping.'
+    : 'Join Berry’s Closet to keep your details ready for checkout.'
+  const form = page.querySelector('form')
+  form.dataset.form = isLogin ? 'login' : 'signup'
+  form.elements.name.hidden = isLogin
+  form.elements.number.hidden = isLogin
+  form.elements.name.required = !isLogin
+  form.elements.number.required = !isLogin
+  form.elements.password.autocomplete = isLogin ? 'current-password' : 'new-password'
+  form.querySelector('button').textContent = isLogin ? 'Log in' : 'Sign up'
+  const switchLink = page.querySelector('.auth-switch')
+  switchLink.href = `/${isLogin ? 'signup' : 'login'}`
+  switchLink.textContent = isLogin ? 'Need an account? Sign up' : 'Already have an account? Log in'
+  return page
 }
 
 function renderApp() {
   document.documentElement.className = state.theme
   const route = getCurrentRoute()
+  const app = document.querySelector('#app')
   if (route.startsWith('admin-')) {
-    const app = document.querySelector('#app')
-    app.innerHTML = '<main class="admin-page"><section class="admin-panel"><p>Checking admin session...</p></section></main>'
+    app.replaceChildren(cloneTemplate('checking-admin-template'))
     getAdminSession().then(async result => {
       if (!result.success || result.role !== 'admin') {
         state.adminData = null
         if (route !== 'admin-login') state.adminNumber = ''
         if (window.location.pathname !== '/admin/login') window.history.replaceState({}, '', '/admin/login')
-        app.innerHTML = renderAdminPage()
+        app.replaceChildren(renderAdminPage())
         return
       }
       if (route !== 'admin-dashboard') window.history.replaceState({}, '', '/admin/dashboard')
       await loadAdminData()
-      app.innerHTML = renderAdminDashboard(state.adminData)
+      app.replaceChildren(renderAdminDashboard(state.adminData))
     }).catch(error => {
       if (route !== 'admin-login') window.history.replaceState({}, '', '/admin/login')
-      app.innerHTML = renderAdminPage()
+      app.replaceChildren(renderAdminPage())
       const message = document.querySelector('#admin-message')
       if (message) message.textContent = error.message
     })
@@ -365,18 +439,45 @@ function renderApp() {
   }
   const page = route === 'home' || route === 'collections' || route === 'lookbook' || route === 'services' ? 'home' : route === 'consultation' ? 'item-request' : route === 'admin' ? 'admin' : route === 'login' || route === 'signup' ? route : route === 'cart' ? 'cart' : route
 
-  document.querySelector('#app').innerHTML = page === 'home' ? renderHomePage() : page === 'cart' ? renderCartPage() : page === 'item-request' ? renderItemRequestPage() : page === 'admin' ? renderAdminPage() : page === 'login' ? renderAuthPage('login') : page === 'signup' ? renderAuthPage('signup') : renderCategoryPage(page)
+  const view = page === 'home' ? renderHomePage() : page === 'cart' ? renderCartPage() : page === 'item-request' ? renderItemRequestPage() : page === 'admin' ? renderAdminPage() : page === 'login' ? renderAuthPage('login') : page === 'signup' ? renderAuthPage('signup') : renderCategoryPage(page)
+  app.replaceChildren(view)
   updateCartCount()
 }
 
 function updateCartCount() { const count = document.querySelector('#cart-count'); if (count) count.textContent = cartCount() }
-function openModal(content, className = '') { document.querySelector('#modal-root').innerHTML = `<div class="modal-backdrop" data-action="close-modal"></div><div class="modal ${className}">${content}</div>`; document.body.classList.add('modal-open') }
-function closeModal() { document.querySelector('#modal-root').innerHTML = ''; document.body.classList.remove('modal-open'); state.modal = null }
+function openModal(content, className = '') {
+  const shell = cloneTemplate('modal-shell-template')
+  const modal = shell.querySelector('.modal')
+  if (className) modal.classList.add(className)
+  modal.querySelector('.modal-slot').append(content)
+  document.querySelector('#modal-root').replaceChildren(shell)
+  document.body.classList.add('modal-open')
+}
+function closeModal() { document.querySelector('#modal-root').replaceChildren(); document.body.classList.remove('modal-open'); state.modal = null }
 function addToCart(product) { state.cart.push({ ...product, cartItemId: crypto.randomUUID(), quantity: 1 }); saveCart(); updateCartCount(); closeModal(); notify(`${product.name} added to your bag.`) }
 function notify(message) { const note = document.createElement('div'); note.className = 'toast'; note.textContent = message; document.body.append(note); setTimeout(() => note.remove(), 2800) }
 
-function showProduct(product) { state.modal = 'product'; openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="product-modal"><img src="${product.image}" alt="${product.name}"><div class="modal-content"><span class="eyebrow">${product.category}</span><h2>${product.name}</h2><strong class="price">${money(product.price)}</strong><p>${product.description}</p><div class="specs"><span><small>Material</small>Premium finish</span><span><small>Fit</small>Curated style</span></div><button class="button button-accent" data-add-product="${product.id}">Add to bag</button></div></div>`, 'wide-modal') }
-function showService(service) { state.modal = 'service'; openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="modal-content"><span class="eyebrow">${service.title} / ${money(service.price)}</span><h2>Reserve your session.</h2><p>${service.description}</p><form class="booking-form" data-form="service"><input type="hidden" name="serviceName" value="${service.title}"><input type="hidden" name="servicePrice" value="${service.price}"><input name="name" placeholder="Full name" required><input name="email" type="email" placeholder="Email" required><input name="phone" placeholder="Phone" required><input name="date" type="date" required><select name="time" required><option value="">Preferred time</option><option>9:00 AM</option><option>11:00 AM</option><option>1:00 PM</option><option>3:00 PM</option><option>5:00 PM</option></select><button class="button button-accent">Request booking</button></form></div>`) }
+function showProduct(product) {
+  state.modal = 'product'
+  const content = cloneTemplate('product-modal-template').firstElementChild
+  content.querySelector('img').src = product.image
+  content.querySelector('img').alt = product.name
+  content.querySelector('.eyebrow').textContent = product.category
+  content.querySelector('h2').textContent = product.name
+  content.querySelector('.price').textContent = money(product.price)
+  content.querySelector('p').textContent = product.description
+  content.querySelector('[data-add-product]').dataset.addProduct = product.id
+  openModal(content, 'wide-modal')
+}
+function showService(service) {
+  state.modal = 'service'
+  const content = cloneTemplate('service-modal-template').firstElementChild
+  content.querySelector('.eyebrow').textContent = `${service.title} / ${money(service.price)}`
+  content.querySelector('p').textContent = service.description
+  content.querySelector('form').elements.serviceName.value = service.title
+  content.querySelector('form').elements.servicePrice.value = service.price
+  openModal(content)
+}
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -386,10 +487,37 @@ function fileToDataUrl(file) {
   })
 }
 
-function showConsultation() { openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="modal-content"><span class="eyebrow">Product request</span><h2>Request an item.</h2><p>Share your name, the product you want, and a clear photo to help us find it.</p><form class="booking-form" data-form="consultation"><input name="name" placeholder="Your full name" required><input name="productName" placeholder="Product name" required><input name="photo" type="file" accept="image/*" required><button class="button button-accent">Send request</button></form></div>`) }
+function showConsultation() { openModal(cloneTemplate('consultation-modal-template')) }
 
-function showCart() { state.modal = 'cart'; const items = state.cart.map(item => `<div class="cart-item"><img src="${item.image}" alt="${item.name}"><div><strong>${item.name}</strong><small>${money(item.price)} / ${item.category}</small><div class="quantity"><button data-quantity="${item.cartItemId}" data-change="-1">−</button><span>${item.quantity}</span><button data-quantity="${item.cartItemId}" data-change="1">+</button></div></div><button class="remove" data-remove="${item.cartItemId}">Remove</button></div>`).join(''); openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="modal-content cart-modal"><span class="eyebrow">Your selection / ${cartCount()} items</span><h2>Shopping bag.</h2>${items || '<div class="empty">Your bag is waiting for something special.</div>'}${items ? `<div class="cart-total"><span>Subtotal</span><strong>${money(cartTotal())}</strong></div><button class="button button-accent" data-action="checkout">Checkout</button>` : ''}</div>`,'cart-modal-shell') }
-function showCheckout() { openModal(`<button class="modal-close" data-action="close-modal">×</button><div class="modal-content"><span class="eyebrow">Secure checkout</span><h2>Almost yours.</h2><form class="booking-form" data-form="checkout"><input name="name" placeholder="Full name" required><input name="email" type="email" placeholder="Email" required><input name="phone" placeholder="Phone" required><input name="address" placeholder="Delivery address" required><button class="button button-accent">Place order · ${money(cartTotal())}</button></form></div>`) }
+function showCart() {
+  state.modal = 'cart'
+  const content = cloneTemplate('cart-modal-template').firstElementChild
+  content.querySelector('[data-cart-label]').textContent = `Your selection / ${cartCount()} items`
+  const items = content.querySelector('[data-cart-items]')
+  state.cart.forEach(item => {
+    const row = cloneTemplate('cart-modal-item-template').firstElementChild
+    row.querySelector('img').src = item.image
+    row.querySelector('img').alt = item.name
+    row.querySelector('strong').textContent = item.name
+    row.querySelector('small').textContent = `${money(item.price)} / ${item.category}`
+    row.querySelector('.quantity span').textContent = item.quantity
+    row.querySelectorAll('[data-change]').forEach(button => { button.dataset.quantity = item.cartItemId })
+    row.querySelector('.remove').dataset.remove = item.cartItemId
+    items.append(row)
+  })
+  if (state.cart.length) content.querySelector('[data-cart-total]').textContent = money(cartTotal())
+  else {
+    items.append(cloneTemplate('cart-modal-empty-template'))
+    content.querySelector('.cart-total').hidden = true
+    content.querySelector('[data-action="checkout"]').hidden = true
+  }
+  openModal(content, 'cart-modal-shell')
+}
+function showCheckout() {
+  const content = cloneTemplate('checkout-modal-template').firstElementChild
+  content.querySelector('form button').textContent = `Place order · ${money(cartTotal())}`
+  openModal(content)
+}
 
 async function postOrder(endpoint, payload) { const response = await fetch(`/api/order/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return response.json() }
 async function postAuth(endpoint, payload) { const response = await fetch(`/api/auth/${endpoint}`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return response.json().catch(() => ({ success: false, message: 'Could not reach the authentication service' })) }
@@ -453,6 +581,23 @@ document.addEventListener('click', event => {
   const action = event.target.closest('[data-action]')?.dataset.action
   const productId = event.target.closest('[data-product]')?.dataset.product
   const isCartRoute = getCurrentRoute() === 'cart'
+  const navToggle = event.target.closest('[data-action="nav-toggle"]')
+  if (navToggle) {
+    const header = document.querySelector('.site-header')
+    if (header) {
+      const isOpen = header.classList.toggle('nav-open')
+      navToggle.setAttribute('aria-expanded', String(isOpen))
+    }
+    return
+  }
+  if (!event.target.closest('.category-menu') && !event.target.closest('.menu-toggle')) {
+    const header = document.querySelector('.site-header')
+    if (header) {
+      header.classList.remove('nav-open')
+      const toggle = header.querySelector('[data-action="nav-toggle"]')
+      if (toggle) toggle.setAttribute('aria-expanded', 'false')
+    }
+  }
   if (productId) showProduct(products.find(product => String(product.id) === String(productId)))
   if (event.target.closest('[data-add-product]')) addToCart(products.find(product => String(product.id) === String(event.target.closest('[data-add-product]').dataset.addProduct)))
   if (event.target.closest('[data-service]')) showService(services.find(service => service.id === Number(event.target.closest('[data-service]').dataset.service)))
@@ -493,6 +638,24 @@ document.addEventListener('submit', async event => {
   event.preventDefault()
   const data = Object.fromEntries(new FormData(form))
   try {
+    if (form.dataset.form === 'site-search') {
+      const query = String(data.query || '').trim().toLowerCase()
+      const featuredProducts = query
+        ? products.filter(product => [product.name, product.category, product.description].some(value => String(value || '').toLowerCase().includes(query)))
+        : products.slice(0, 5)
+      const productTrack = document.querySelector('#product-track')
+      const title = document.querySelector('#featured-title')
+      const eyebrow = document.querySelector('#featured-eyebrow')
+      if (productTrack && title && eyebrow) {
+        productTrack.replaceChildren(featuredProducts.length
+          ? productCards(featuredProducts)
+          : cloneTemplate('empty-search-template'))
+        title.textContent = query ? 'Search results' : 'Top picks for you'
+        eyebrow.textContent = query ? `${featuredProducts.length} items found` : 'Picked for you'
+        document.querySelector('#collections')?.scrollIntoView({ behavior: 'smooth' })
+      }
+      return
+    }
     if (form.dataset.form === 'login' || form.dataset.form === 'signup') {
       const result = await postAuth(form.dataset.form === 'login' ? 'login' : 'signup', data)
       if (!result.success) throw new Error(result.message)
@@ -609,8 +772,11 @@ document.addEventListener('change', async event => {
   }
 })
 
-window.addEventListener('hashchange', renderApp)
-window.addEventListener('popstate', renderApp)
+const renderRouteOnLocationChange = () => {
+  if (window.location.pathname !== '/' || !window.location.hash || window.location.hash.startsWith('#/')) renderApp()
+}
+window.addEventListener('hashchange', renderRouteOnLocationChange)
+window.addEventListener('popstate', renderRouteOnLocationChange)
 
 renderApp()
 loadPublicContent()

@@ -1,0 +1,52 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build client",
+			"type": "shell",
+			"command": "cd Client; npm install; npm run build",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run client dev server",
+			"type": "shell",
+			"command": "cd Client; npm run dev -- --host 0.0.0.0",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run API server",
+			"type": "shell",
+			"command": "cd Server; npm install; npm run start",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Lint client JavaScript",
+			"type": "shell",
+			"command": "cd Client; npm run lint",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Move app to plain static script",
+			"type": "shell",
+			"command": "New-Item -ItemType Directory -Force Client\\public | Out-Null; New-Item -ItemType Directory -Force Client\\public\\assets | Out-Null; Move-Item Client\\src\\main.js Client\\public\\main.js; Copy-Item Client\\photo_2026-09-27_16-26-10.jpg,Client\\photo_2026-09-27_16-25-40.jpg,Client\\photo_2026-09-27_17-06-57.jpg Client\\public\\assets\\",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Lint plain JavaScript",
+			"type": "shell",
+			"command": "cd Client; npm run lint",
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}
