@@ -16,3 +16,4 @@ authRouter.post('/request-password-reset', authLimiter, sendPasswordResetLink);
 authRouter.put('/reset-password', authLimiter, resetPassword);
 
 export default authRouter;
+// HTTP routes for customer registration, login, verification, and password recovery.

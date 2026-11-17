@@ -479,3 +479,4 @@ a[x-apple-data-detectors],
   </div>
  </body>
 </html>`
+// HTML email templates used for account verification and welcome messages.

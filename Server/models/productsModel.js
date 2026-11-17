@@ -20,3 +20,4 @@ const productShema = new mongoose.Schema({
 const productModel = mongoose.models.products || mongoose.model('product', productShema);
 
 export default productModel;
+// Mongoose model for storefront catalog products.

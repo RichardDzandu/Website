@@ -19,3 +19,4 @@ const connectDB = async () => {
 };
 
 export default connectDB;
+// MongoDB connection configuration and startup handling.

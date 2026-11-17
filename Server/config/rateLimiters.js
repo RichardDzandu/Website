@@ -10,3 +10,4 @@ const apiLimit = (max, message) => rateLimit({
 
 export const authLimiter = apiLimit(20, 'Too many authentication attempts. Try again later.')
 export const adminLimiter = apiLimit(10, 'Too many admin access attempts. Try again later.')
+// Shared request-rate limits for authentication and public API endpoints.

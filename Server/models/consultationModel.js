@@ -13,3 +13,4 @@ const ordersShema = new mongoose.Schema({
 const consultModel = mongoose.models.wconsult || mongoose.model('wconsult', ordersShema);
 
 export default consultModel;
+// Mongoose model for customer product-consultation requests.

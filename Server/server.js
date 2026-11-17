@@ -57,3 +57,4 @@ if(process.env.NODE_ENV !== "production"){
 
 //Export server for vercel
 export default server;
+// Application entry point: environment setup, database connection, middleware, and route mounting.

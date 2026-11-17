@@ -11,3 +11,4 @@ const transporter = nodemailer.createTransport({
 })
 
 export default transporter;
+// Email transporter configuration for account and password notifications.

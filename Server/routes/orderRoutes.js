@@ -11,3 +11,4 @@ orderRouter.put('/update-order', updateOrder);
 orderRouter.post('/delete-order', deleteOrder);
 
 export default orderRouter;
+// HTTP routes for creating and managing storefront orders.

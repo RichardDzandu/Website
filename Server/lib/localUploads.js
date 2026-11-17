@@ -56,3 +56,4 @@ export async function removeUploadedFile(url) {
     if (error.code !== 'ENOENT') throw error
   }
 }
+// Local image-upload storage and cleanup helpers.

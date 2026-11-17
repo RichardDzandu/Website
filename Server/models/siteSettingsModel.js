@@ -1,9 +1,9 @@
 import mongoose from 'mongoose'
 
 const siteSettingsSchema = new mongoose.Schema({
-  accent: { type: String, default: '#e94f70' },
-  paper: { type: String, default: '#f7f3f1' },
-  ink: { type: String, default: '#171516' },
+  accent: { type: String, default: '#b49a6a' },
+  paper: { type: String, default: '#f7f6f3' },
+  ink: { type: String, default: '#171715' },
   lookbookManaged: { type: Boolean, default: false },
   catalogManaged: { type: Boolean, default: false },
   looks: [{
@@ -14,3 +14,4 @@ const siteSettingsSchema = new mongoose.Schema({
 })
 
 export default mongoose.models.siteSettings || mongoose.model('siteSettings', siteSettingsSchema)
+// Mongoose model for published storefront colors and lookbook settings.

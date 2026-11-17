@@ -103,3 +103,4 @@ export const getProductData = async (req, res) => {
     return res.json({ success: false, message: 'Failed to get products' });
   }
 }
+// Product catalog creation, updates, uploads, and deletion operations.

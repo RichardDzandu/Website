@@ -10,3 +10,4 @@ const adminSetupSchema = new mongoose.Schema({
 const adminSetupModel = mongoose.models.adminSetup || mongoose.model('adminSetup', adminSetupSchema)
 
 export default adminSetupModel
+// Mongoose model for tracking initial administrator setup state.

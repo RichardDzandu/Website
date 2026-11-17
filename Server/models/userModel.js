@@ -16,3 +16,4 @@ const userShema = new mongoose.Schema({
 const userModel = mongoose.models.user1 || mongoose.model('user1', userShema);
 
 export default userModel;
+// Mongoose model for registered customer accounts and password recovery fields.

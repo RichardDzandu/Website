@@ -7,3 +7,4 @@ const userRouter = express.Router();
 userRouter.get('/data', userAuth, getUserData);
 
 export default userRouter;
+// HTTP routes for authenticated customer profile data.

@@ -1,3 +1,4 @@
+// Berry's Closet storefront: catalog data, application state, and shared helpers.
 const sandalLookImage = './assets/photo_2026-09-27_16-26-10.jpg'
 const sandal = './assets/photo_2026-09-27_16-25-40.jpg'
 const bag = './assets/photo_2026-09-27_17-06-57.jpg'
@@ -30,7 +31,6 @@ let products = [
   { id: 18, image: 'https://images.unsplash.com/photo-1546868871-7041f2a55e12?q=80&w=2070', name: 'Smart Fitness Watch', price: 310, category: 'Gadgets', slug: 'gadgets', description: 'Track workouts, health, notifications, and sleep with premium built-in sensors.' },
   { id: 19, image: 'https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=2070', name: 'Pocket Projector', price: 420, category: 'Gadgets', slug: 'gadgets', description: 'Movie-night-ready projector with wireless casting for home enjoyment and travel.' },
   { id: 20, image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?q=80&w=2070', name: 'Smart Home Speaker', price: 195, category: 'Gadgets', slug: 'gadgets', tag: 'New', description: 'Compact speaker with voice assistant support, room filling sound, and seamless pairing.' },
-  { id: 20, image: bag, name: 'Smart Home Speaker', price: 195, category: 'Gadgets', slug: 'gadgets', tag: 'New', description: 'Compact speaker with voice assistant support, room filling sound, and seamless pairing.' },
 ]
 
 const services = [
@@ -51,12 +51,13 @@ let looks = [
   { image: bag, title: 'Red bag', description: 'Nice Material bag', height: '200px', width: '200px' },
 ]
 
+// The cart key remains versioned so existing customer cart contents stay compatible.
 const cartStorageKey = 'berrys-closet-cart'
 const savedCart = localStorage.getItem(cartStorageKey) || localStorage.getItem('aura-cart') || '[]'
 
 const state = {
   cart: JSON.parse(savedCart),
-  theme: localStorage.getItem('theme') || 'dark',
+  theme: localStorage.getItem('theme') || 'light',
   lookIndex: 0,
   product: null,
   service: null,
@@ -65,6 +66,7 @@ const state = {
   adminData: null,
   adminProducts: [],
   adminSettings: null,
+  customer: null,
 }
 
 const money = value => `GHS${Number(value).toFixed(2)}`
@@ -72,10 +74,12 @@ const saveCart = () => localStorage.setItem(cartStorageKey, JSON.stringify(state
 const cartTotal = () => state.cart.reduce((total, item) => total + item.price * item.quantity, 0)
 const cartCount = () => state.cart.reduce((total, item) => total + item.quantity, 0)
 
+// Resolve each URL or hash route before choosing a page renderer.
 function getCurrentRoute() {
   const pathname = window.location.pathname.replace(/\/$/, '') || '/'
   if (pathname === '/login') return 'login'
   if (pathname === '/signup') return 'signup'
+  if (pathname === '/shop') return 'shop'
   if (pathname === '/admin/setup') return 'admin-setup'
   if (pathname === '/forgot-password') return 'forgot-password'
   if (pathname === '/reset-password') return 'reset-password'
@@ -98,6 +102,7 @@ function cloneTemplate(id) {
   return source.content.cloneNode(true)
 }
 
+// Build the appropriate footer and add the category directory on the guest page.
 function renderFooter(home = false) {
   const footer = cloneTemplate(home ? 'home-footer-template' : 'site-footer-template').firstElementChild
   if (home) {
@@ -112,12 +117,14 @@ function renderFooter(home = false) {
   return footer
 }
 
+// Combine a rendered page with its header and footer.
 function pageWithHeader(page, route, home = false) {
   const output = document.createDocumentFragment()
   output.append(renderNav(route), page, renderFooter(home))
   return output
 }
 
+// Generate card elements for a category or the complete product list.
 function productCards(categoryFilter = null) {
   const list = Array.isArray(categoryFilter)
     ? categoryFilter
@@ -143,6 +150,7 @@ function productCards(categoryFilter = null) {
   return cards
 }
 
+// Populate category navigation and highlight the current storefront route.
 function renderNav(currentRoute = getCurrentRoute()) {
   const isHome = currentRoute === 'home'
   const fragment = cloneTemplate(isHome ? 'home-header-template' : 'standard-header-template')
@@ -164,6 +172,7 @@ function renderNav(currentRoute = getCurrentRoute()) {
   return fragment
 }
 
+// Render the guest storefront and its curated landing-page sections.
 function renderHomePage() {
   const categoryIcons = ['✦', '◇', '◌', '✧', '⌘']
   const page = cloneTemplate('home-page-template').firstElementChild
@@ -223,6 +232,45 @@ function renderHomePage() {
   return pageWithHeader(page, 'home', true)
 }
 
+// Render the different, account-aware shopping page for known customers.
+function renderCustomerShopPage(customer) {
+  state.customer = customer
+  const page = cloneTemplate('customer-shop-page-template').firstElementChild
+  const firstName = String(customer.name || '').trim().split(/\s+/)[0] || 'there'
+  page.querySelector('[data-customer-name]').textContent = firstName
+  const categories = page.querySelector('[data-customer-categories]')
+  categoryMeta.forEach(category => {
+    const link = cloneTemplate('category-link-template').firstElementChild
+    link.href = `#/${category.slug}`
+    link.textContent = category.label
+    categories.append(link)
+  })
+  page.querySelector('[data-customer-products]').append(productCards())
+  return pageWithHeader(page, 'shop')
+}
+
+// Confirm customer authentication before displaying the account shopping view.
+async function loadCustomerShop(app) {
+  try {
+    const response = await fetch('/api/user/data', { credentials: 'include' })
+    const result = await response.json()
+    if (!response.ok) throw new Error(result.message || 'Could not load your account.')
+    if (getCurrentRoute() !== 'shop') return
+    if (!result.success || !result.userData) {
+      app.replaceChildren(cloneTemplate('customer-shop-guest-template'))
+      return
+    }
+    app.replaceChildren(renderCustomerShopPage(result.userData))
+    updateCartCount()
+  } catch (error) {
+    if (getCurrentRoute() !== 'shop') return
+    const page = cloneTemplate('customer-shop-error-template')
+    page.querySelector('[data-shop-error]').textContent = getErrorMessage(error, 'Could not load your shopping page. Please try again.')
+    app.replaceChildren(page)
+  }
+}
+
+// Render the complete cart, including quantity controls and totals.
 function renderCartPage() {
   const page = cloneTemplate('cart-page-template').firstElementChild
   const panel = page.querySelector('.cart-items-panel')
@@ -250,6 +298,7 @@ function renderCartPage() {
   return pageWithHeader(page, 'cart')
 }
 
+// Render the selected collection and its matching products.
 function renderCategoryPage(slug) {
   const category = categoryMeta.find(item => item.slug === slug) || categoryMeta[0]
   const items = products.filter(product => product.slug === slug)
@@ -299,9 +348,10 @@ async function loadAdminSetupStatus() {
   return result.available
 }
 
+// Build every administrator dashboard table, form, and settings control.
 function renderAdminDashboard(data) {
   const rows = [...data.itemRequests.map(item => ({ type: 'Item request', customer: item.name, item: item.productName, status: item.status, date: item.createdAt || item.date })), ...data.itemOrders.map(item => ({ id: item._id, trackingId: item.trackingId || item._id, kind: 'item', type: 'Order', customer: item.customerName, item: item.itemName, status: item.status, date: item.createdAt })), ...data.serviceOrders.map(item => ({ id: item._id, trackingId: item.trackingId || item._id, kind: 'service', type: 'Service', customer: item.clientName, item: item.serviceName, status: item.status, date: item.createdAt || item.date }))]
-  const settings = state.adminSettings || { accent: '#e94f70', paper: '#f7f3f1', ink: '#171516', looks: [] }
+  const settings = state.adminSettings || { accent: '#b49a6a', paper: '#f7f6f3', ink: '#171715', looks: [] }
   const statuses = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled']
   const page = cloneTemplate('admin-dashboard-template').firstElementChild
   page.querySelector('[data-request-count]').textContent = data.itemRequests.length
@@ -395,6 +445,7 @@ function renderAdminDashboard(data) {
   return page
 }
 
+// Configure shared authentication markup for login or signup behavior.
 function renderAuthPage(mode = 'login') {
   const isLogin = mode === 'login'
   const page = cloneTemplate('auth-page-template').firstElementChild
@@ -434,10 +485,17 @@ function renderResetPasswordPage() {
   return page
 }
 
+// Central route dispatcher mounts the correct storefront or account page.
 function renderApp() {
   document.documentElement.className = state.theme
   const route = getCurrentRoute()
   const app = document.querySelector('#app')
+  if (route === 'shop') {
+    app.replaceChildren(cloneTemplate('customer-shop-loading-template'))
+    loadCustomerShop(app)
+    updateCartCount()
+    return
+  }
   if (route === 'admin-login') {
     app.replaceChildren(renderAdminPage())
     updateCartCount()
@@ -498,6 +556,7 @@ function renderApp() {
 }
 
 function updateCartCount() { const count = document.querySelector('#cart-count'); if (count) count.textContent = cartCount() }
+// Open a reusable modal shell with an optional modal-size class.
 function openModal(content, className = '') {
   const shell = cloneTemplate('modal-shell-template')
   const modal = shell.querySelector('.modal')
@@ -506,6 +565,7 @@ function openModal(content, className = '') {
   document.querySelector('#modal-root').replaceChildren(shell)
   document.body.classList.add('modal-open')
 }
+// Remove modal markup, restore scrolling, and clear modal state.
 function closeModal() { document.querySelector('#modal-root').replaceChildren(); document.body.classList.remove('modal-open'); state.modal = null }
 function addToCart(product) { state.cart.push({ ...product, cartItemId: crypto.randomUUID(), quantity: 1 }); saveCart(); updateCartCount(); closeModal(); notify(`${product.name} added to your bag.`) }
 function getErrorMessage(error, fallback = 'Something went wrong. Please try again.') {
@@ -518,6 +578,7 @@ function setMessage(element, message, isError = false) {
 }
 function notify(message) { const note = document.createElement('div'); note.className = 'toast'; note.textContent = message; document.body.append(note); setTimeout(() => note.remove(), 2800) }
 
+// Open a product detail modal populated from the selected catalog item.
 function showProduct(product) {
   state.modal = 'product'
   const content = cloneTemplate('product-modal-template').firstElementChild
@@ -580,12 +641,14 @@ function showCheckout() {
   openModal(content)
 }
 
+// API helpers keep order, customer authentication, and administrator calls consistent.
 async function postOrder(endpoint, payload) { const response = await fetch(`/api/order/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return response.json() }
 async function postAuth(endpoint, payload) { const response = await fetch(`/api/auth/${endpoint}`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return response.json().catch(() => ({ success: false, message: 'Could not reach the authentication service' })) }
 async function putAuth(endpoint, payload) { const response = await fetch(`/api/auth/${endpoint}`, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return response.json().catch(() => ({ success: false, message: 'Could not reach the authentication service' })) }
 async function postAdmin(endpoint, payload = {}, method = 'POST') { const response = await fetch(`/api/admin/${endpoint}`, { method, credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return response.json().catch(() => ({ success: false, message: 'Could not reach the admin service' })) }
 async function getAdminDashboard() { const response = await fetch('/api/admin/dashboard', { credentials: 'include' }); return response.json() }
 async function getAdminSession() { const response = await fetch('/api/admin/session', { credentials: 'include' }); return response.json().catch(() => ({ success: false, message: 'Admin authentication service is unavailable' })) }
+// Refresh published catalog settings and customer-visible content.
 async function loadPublicContent() {
   try {
     const [settingsResponse, productsResponse] = await Promise.all([fetch('/api/admin/public-settings'), fetch('/api/product/data')])
@@ -603,7 +666,7 @@ async function loadPublicContent() {
     if (productsResult.success && settingsResult.settings?.catalogManaged) {
       products = productsResult.products.map(product => ({ ...product, id: product._id, price: Number(product.price), category: product.category || "Women's Wear", slug: product.slug || 'womens-wear' }))
     }
-    if (settingsResult.success && (getCurrentRoute() === 'home' || categoryMeta.some(category => category.slug === getCurrentRoute()))) renderApp()
+    if (settingsResult.success && (getCurrentRoute() === 'home' || getCurrentRoute() === 'shop' || categoryMeta.some(category => category.slug === getCurrentRoute()))) renderApp()
   } catch (error) {
     console.error('Could not load published catalog settings:', error)
     notify(getErrorMessage(error, 'Could not load the latest store content. Please refresh and try again.'))
@@ -624,8 +687,10 @@ async function loadAdminData() {
 
 async function refreshAdmin() { await loadAdminData(); renderApp() }
 
+// Advance or reverse the lookbook carousel without leaving the available slides.
 function changeLook(direction) { if (!looks.length) return; state.lookIndex = (state.lookIndex + direction + looks.length) % looks.length; const look = looks[state.lookIndex]; document.querySelector('#lookbook-image').src = look.image; document.querySelector('#lookbook-image').alt = look.title; document.querySelector('#lookbook-title').textContent = look.title; document.querySelector('#lookbook-description').textContent = look.description; document.querySelector('.lookbook-copy .eyebrow').textContent = `${String(state.lookIndex + 1).padStart(2, '0')} / ${String(looks.length).padStart(2, '0')}` }
 
+// Handle navigation, cart, theme, lookbook, modal, and administrator actions.
 document.addEventListener('click', event => {
   const navLink = event.target.closest('a[href^="#/"]')
   if (navLink) {
@@ -690,9 +755,19 @@ document.addEventListener('click', event => {
     postAdmin('products/clear', {}, 'DELETE').then(async result => { if (!result.success) throw new Error(result.message); await refreshAdmin(); await loadPublicContent(); notify('All catalog products and uploaded photos deleted.') }).catch(error => notify(getErrorMessage(error, 'Could not delete the products. Please try again.')))
   }
   if (action === 'checkout') showCheckout()
+  if (action === 'customer-logout') {
+    postAuth('logout', {}).then(result => {
+      if (!result.success) throw new Error(result.message || 'Could not log out.')
+      state.customer = null
+      navigateTo('/')
+      notify('You have been signed out.')
+    }).catch(error => notify(getErrorMessage(error, 'Could not log out. Please try again.')))
+  }
+  if (action === 'retry-shop') renderApp()
   if (action === 'scroll-products') document.querySelector('#product-track').scrollBy({ left: event.target.closest('[data-direction]').dataset.direction === 'left' ? -340 : 340, behavior: 'smooth' })
 })
 
+// Route form submissions to authentication, checkout, catalog, or support APIs.
 document.addEventListener('submit', async event => {
   const form = event.target
   if (form.id === 'newsletter-form') { event.preventDefault(); form.reset(); notify("Welcome to Berry's Closet."); return }
@@ -726,7 +801,7 @@ document.addEventListener('submit', async event => {
         error.code = result.code
         throw error
       }
-      navigateTo('/')
+      navigateTo('/shop')
       notify(form.dataset.form === 'login' ? 'Welcome back.' : 'Your account has been created.')
       return
     }
@@ -866,6 +941,7 @@ document.addEventListener('submit', async event => {
   }
 })
 
+// Process administrator order-status changes from tracking selects.
 document.addEventListener('change', async event => {
   const selector = event.target.closest('[data-tracking-id]')
   if (!selector) return
@@ -886,6 +962,7 @@ document.addEventListener('change', async event => {
 const renderRouteOnLocationChange = () => {
   if (window.location.pathname !== '/' || !window.location.hash || window.location.hash.startsWith('#/')) renderApp()
 }
+// Re-render when navigation changes from links, browser history, or hash updates.
 window.addEventListener('hashchange', renderRouteOnLocationChange)
 window.addEventListener('popstate', renderRouteOnLocationChange)
 

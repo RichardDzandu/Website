@@ -18,3 +18,4 @@ const ordersShema = new mongoose.Schema({
 const orderAModel = mongoose.models.wordersA || mongoose.model('wordersA', ordersShema);
 
 export default orderAModel;
+// Mongoose model for physical-product and checkout orders.

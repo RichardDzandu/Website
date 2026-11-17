@@ -24,3 +24,4 @@ adminRouter.delete('/products/clear', adminAuth, deleteAllProducts)
 adminRouter.patch('/tracking', adminAuth, updateTrackedOrder)
 
 export default adminRouter
+// HTTP routes for administrator setup, sessions, dashboard, settings, and tracking.

@@ -312,3 +312,4 @@ export const resetPassword = async (req, res) => {
         return res.status(500).json({ success: false, message: 'Could not reset password' });
     }
 };
+// Customer registration, login, logout, verification, and password recovery operations.

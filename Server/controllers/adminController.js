@@ -192,7 +192,7 @@ export const getAdminDashboard = async (req, res) => {
 
 export const getSiteSettings = async (req, res) => {
   const settings = await siteSettingsModel.findOne().lean()
-  return res.json({ success: true, settings: settings || { accent: '#e94f70', paper: '#f7f3f1', ink: '#171516', looks: [], lookbookManaged: false, catalogManaged: false } })
+  return res.json({ success: true, settings: settings || { accent: '#b49a6a', paper: '#f7f6f3', ink: '#171715', looks: [], lookbookManaged: false, catalogManaged: false } })
 }
 
 export const getPublicSiteSettings = async (req, res) => getSiteSettings(req, res)
@@ -314,3 +314,4 @@ export const deleteAllProducts = async (req, res) => {
   await Promise.all(products.flatMap(product => [removeUploadedFile(product.image), removeUploadedFile(product.video)]))
   return res.json({ success: true })
 }
+// Administrator authentication, setup, dashboard, settings, and tracking operations.

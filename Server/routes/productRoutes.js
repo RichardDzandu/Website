@@ -12,3 +12,4 @@ productRouter.put('/update-product', adminAuth, updateProduct);
 productRouter.post('/delete-product', adminAuth, deleteProduct);
 
 export default productRouter;
+// HTTP routes for public and administrator product operations.

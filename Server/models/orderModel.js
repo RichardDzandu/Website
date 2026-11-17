@@ -17,3 +17,4 @@ const ordersShema = new mongoose.Schema({
 const orderModel = mongoose.models.worders || mongoose.model('worders', ordersShema);
 
 export default orderModel;
+// Mongoose model for service and beauty-session bookings.

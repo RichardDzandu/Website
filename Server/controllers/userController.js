@@ -24,3 +24,4 @@ export const getUserData = async (req, res)=>{
         return res.json({success: false, message: error.message});
     }
 }
+// Authenticated customer profile-data operations.
