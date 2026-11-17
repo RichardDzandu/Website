@@ -12,16 +12,10 @@
     <div id="modal-root"></div>
 
     <template id="home-header-template">
-      <div class="announcement-bar"><span>✦ Curated style, beauty & everyday finds</span><span>Accra-based · Made for you</span></div>
       <header class="site-header home-header">
         <div class="home-header-main">
           <a class="brand" href="#top">Berry's <span>Closet</span></a>
-          <form class="home-search" data-form="site-search" role="search">
-            <input name="query" type="search" placeholder="Search products and collections..." aria-label="Search products and collections">
-            <button type="submit" aria-label="Search">⌕</button>
-          </form>
           <div class="header-actions">
-            <a class="header-account" href="/login"><span aria-hidden="true">♙</span><small>Account</small></a>
             <button class="icon-button" data-action="theme" aria-label="Toggle theme">◐</button>
             <button class="cart-button" data-action="cart" aria-label="Open shopping cart">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h2l2.3 9.1a1 1 0 0 0 1 .8h8.6a1 1 0 0 0 1-.8L20 7H7"/><circle cx="10" cy="18.5" r="1.2"/><circle cx="17" cy="18.5" r="1.2"/></svg>
@@ -30,14 +24,12 @@
           </div>
         </div>
         <div class="nav-shell home-nav-shell">
-          <button class="menu-toggle home-menu-toggle" type="button" data-action="nav-toggle" aria-label="Open categories" aria-expanded="false">☰ <span>All Categories</span></button>
           <nav class="nav-main" aria-label="Main navigation">
             <a href="#/" class="nav-link" data-route-link="home">Home</a>
             <a href="#services" class="nav-link" data-route-link="services">About Us</a>
             <a href="#contact" class="nav-link" data-route-link="contact">Contact</a>
             <a href="#support" class="nav-link" data-route-link="support">Support</a>
-            <a href="#collections" class="nav-link" data-route-link="collections">Shop With Us</a>
-            <a href="/signup" class="nav-link" data-route-link="signup">Join Us</a>
+            <a href="#collections" class="nav-link" data-route-link="collections">Shop</a>
           </nav>
         </div>
         <div class="category-menu" aria-label="Shop categories" data-category-list></div>
@@ -53,10 +45,9 @@
             <a href="#services" class="nav-link" data-route-link="services">About Us</a>
             <a href="#contact" class="nav-link" data-route-link="contact">Contact</a>
             <a href="#support" class="nav-link" data-route-link="support">Support</a>
-            <a href="#collections" class="nav-link" data-route-link="collections">Shop With Us</a>
-            <a href="/signup" class="nav-link" data-route-link="signup">Join Us</a>
+            <a href="#collections" class="nav-link" data-route-link="collections">Shop</a>
+            
           </nav>
-          <button class="menu-toggle" type="button" data-action="nav-toggle" aria-label="Open categories" aria-expanded="false">☰</button>
         </div>
         <div class="category-menu" aria-label="Shop categories" data-category-list></div>
         <div class="header-actions">
@@ -105,13 +96,9 @@
           <img src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070" alt="A curated fashion collection">
           <div class="hero-shade"></div>
           <div class="hero-copy">
-            <span class="eyebrow">Berry's Closet · Accra</span>
-            <h1>Elevate your<br><em>everyday.</em></h1>
-            <p>Discover thoughtfully chosen fashion, beauty, and everyday finds, all in one place.</p>
-            <a class="button button-accent" href="#collections">Shop the collection <span aria-hidden="true">→</span></a>
-            <div class="hero-promises"><span>✦ Curated finds</span><span>♡ Made for your style</span><span>⌂ Local support</span></div>
+           <h1><em>WELCOME TO BERRY'S CLOSET</em></h1>
+            <a class="button button-accent" href="/signup">Be a customer </a>
           </div>
-          <div class="hero-side-note"><span>THE BERRY'S EDIT</span><strong>Good taste.<br>Every day.</strong></div>
         </section>
         <section class="home-category-strip" id="shop-categories" aria-label="Shop categories"></section>
         <section class="section collections home-featured" id="collections">
@@ -139,7 +126,7 @@
         <section class="section consultation" id="contact">
           <div class="consultation-panel"><span class="eyebrow">Contact us</span><h2>Let’s connect.</h2><p class="intro">Reach out for product requests, styling support, bookings, or quick questions. We’re always happy to help.</p>
             <div class="contact-grid">
-              <div class="contact-card"><span class="eyebrow">Phone</span><a href="tel:+233246789012">+233 24 678 9012</a><a href="tel:+233509876543">+233 50 987 6543</a></div>
+              <div class="contact-card"><span class="eyebrow">Phone</span><a href="tel:+233535331890">+233 535331890</a><a href="tel:+233535331890">+233 535331890</a></div>
               <div class="contact-card"><span class="eyebrow">Email</span><a href="mailto:hello@berryscloset.com">hello@berryscloset.com</a><a href="mailto:orders@berryscloset.com">orders@berryscloset.com</a></div>
               <div class="contact-card"><span class="eyebrow">Social</span><a href="https://instagram.com/berryscloset" target="_blank" rel="noreferrer">@berryscloset</a><a href="https://facebook.com/berryscloset" target="_blank" rel="noreferrer">facebook.com/berryscloset</a><a href="https://wa.me/233246789012" target="_blank" rel="noreferrer">WhatsApp: +233 24 678 9012</a></div>
             </div>
@@ -175,14 +162,22 @@
     <template id="empty-cart-template"><div class="empty-cart"><p>Your cart is empty. Add a few items from the collection.</p><a class="button button-accent" href="#/womens-wear">Continue shopping</a></div></template>
     <template id="item-request-page-template"><main class="item-request-page"><form class="booking-form item-request-form" data-form="consultation"><input name="name" placeholder="Your full name" required><input name="productName" placeholder="Product name" required><input name="photo" type="file" accept="image/*" required><button class="button button-accent">Send request</button></form></main></template>
     <template id="auth-page-template">
-      <main class="auth-page"><section class="auth-panel"><a class="brand" href="#/">Berry's <span>Closet</span></a><span class="eyebrow">Your account</span><h1 data-auth-heading></h1><p data-auth-description></p><form class="auth-form"><input name="name" placeholder="Full name" autocomplete="name" required><input name="number" type="tel" placeholder="Mobile number" autocomplete="tel" required><input name="email" type="email" placeholder="Email address" autocomplete="email" required><input name="password" type="password" placeholder="Password" minlength="8" required><button class="button button-accent"></button></form><p class="auth-message" id="auth-message" aria-live="polite"></p><a class="auth-switch"></a></section></main>
+      <main class="auth-page"><section class="auth-panel"><a class="brand" href="#/">Berry's <span>Closet</span></a><span class="eyebrow">Your account</span><h1 data-auth-heading></h1><p data-auth-description></p><form class="auth-form"><input name="name" placeholder="Full name" autocomplete="name" required><input name="number" type="tel" placeholder="Mobile number" autocomplete="tel" required><input name="email" type="email" placeholder="Email address" autocomplete="email" required><input name="password" type="password" placeholder="Password" minlength="8" required><button class="button button-accent"></button></form><a class="auth-forgot-link" href="/forgot-password" hidden>Forgot password?</a><p class="auth-message" id="auth-message" aria-live="polite"></p><a class="auth-switch"></a><a class="admin-login-link" href="/admin" hidden>Admin login</a></section></main>
+    </template>
+    <template id="forgot-password-page-template">
+      <main class="auth-page"><section class="auth-panel"><a class="brand" href="#/">Berry's <span>Closet</span></a><span class="eyebrow">Account recovery</span><h1>Reset your password.</h1><p>Enter your account email and we’ll send you a password reset link. The link expires in 15 minutes.</p><form class="auth-form" data-form="forgot-password"><input name="email" type="email" placeholder="Email address" autocomplete="email" required><button class="button button-accent">Send reset link</button></form><p class="auth-message" id="auth-message" aria-live="polite"></p><a class="auth-switch" href="/login">Back to log in</a></section></main>
+    </template>
+    <template id="reset-password-page-template">
+      <main class="auth-page"><section class="auth-panel"><a class="brand" href="#/">Berry's <span>Closet</span></a><span class="eyebrow">Account recovery</span><h1>Choose a new password.</h1><p>Your new password must be at least 8 characters long.</p><form class="auth-form" data-form="reset-password"><input name="token" type="hidden"><input name="newPassword" type="password" placeholder="New password" autocomplete="new-password" minlength="8" required><input name="confirmPassword" type="password" placeholder="Confirm new password" autocomplete="new-password" minlength="8" required><button class="button button-accent">Save new password</button></form><p class="auth-message" id="auth-message" aria-live="polite"></p><a class="auth-switch" href="/login">Back to log in</a></section></main>
     </template>
     <template id="admin-login-template">
-      <main class="admin-page"><section class="admin-panel"><span class="eyebrow">Restricted access</span><h1>Admin portal</h1><p data-admin-instructions></p><form class="admin-form"><div data-admin-fields></div><button class="button button-accent"></button></form><button class="admin-secondary" data-action="admin-change-number">Use a different number</button><p class="admin-message" id="admin-message" aria-live="polite"></p></section></main>
+      <main class="admin-page"><section class="admin-panel"><span class="eyebrow">Restricted access</span><h1>Admin portal</h1><p data-admin-instructions></p><form class="admin-form"><div data-admin-fields></div><button class="button button-accent"></button></form><a class="admin-setup-link" href="/admin/setup">Create admin account</a><p class="admin-message" id="admin-message" aria-live="polite"></p></section></main>
     </template>
-    <template id="admin-field-number-template"><input name="number" type="tel" autocomplete="tel" placeholder="Mobile number" required></template>
+    <template id="admin-setup-template">
+      <main class="admin-page"><section class="admin-panel"><span class="eyebrow">Initial setup</span><h1>Create admin account.</h1><p data-setup-instructions>Checking whether initial setup is available...</p><form class="admin-form" data-form="admin-setup" hidden><input name="number" type="tel" autocomplete="tel" placeholder="Authorized admin phone number" required><input name="email" type="email" autocomplete="email" placeholder="Admin email" required><input name="password" type="password" autocomplete="new-password" minlength="12" placeholder="Password (12 characters minimum)" required><button class="button button-accent">Create admin account</button></form><p class="admin-message" data-setup-message aria-live="polite"></p><a class="admin-secondary" href="/admin">Back to admin login</a></section></main>
+    </template>
+    <template id="admin-field-email-template"><input name="email" type="email" autocomplete="username" placeholder="Personal email" required></template>
     <template id="admin-field-password-template"><input name="password" type="password" autocomplete="current-password" placeholder="Admin password" required></template>
-    <template id="admin-field-code-template"><input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="6-digit code" required></template>
     <template id="admin-dashboard-template">
       <main class="admin-page admin-dashboard"><section class="admin-panel admin-panel-wide">
         <div class="admin-heading"><div><span class="eyebrow">Restricted access</span><h1>Admin dashboard</h1></div><button class="admin-secondary" data-action="admin-logout">Log out</button></div>

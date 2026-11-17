@@ -1,5 +1,5 @@
 import express from 'express'
-import { addLook, adminLogout, deleteAllLooks, deleteAllProducts, deleteLook, getAdminDashboard, getProductsForAdmin, getPublicSiteSettings, getSiteSettings, getTrackedOrder, initializeStorefront, requestAdminCode, updateSiteSettings, updateTrackedOrder, verifyAdminCode } from '../controllers/adminController.js'
+import { addLook, adminLogin, adminLogout, createInitialAdmin, deleteAllLooks, deleteAllProducts, deleteLook, getAdminDashboard, getAdminSetupStatus, getProductsForAdmin, getPublicSiteSettings, getSiteSettings, getTrackedOrder, initializeStorefront, updateSiteSettings, updateTrackedOrder } from '../controllers/adminController.js'
 import adminAuth from '../middleware/adminAuth.js'
 import { adminLimiter } from '../config/rateLimiters.js'
 
@@ -7,9 +7,10 @@ const adminRouter = express.Router()
 
 adminRouter.get('/public-settings', getPublicSiteSettings)
 adminRouter.get('/track/:trackingId', getTrackedOrder)
+adminRouter.get('/setup-status', getAdminSetupStatus)
+adminRouter.post('/setup', adminLimiter, createInitialAdmin)
 adminRouter.get('/session', adminAuth, (req, res) => res.json({ success: true, role: 'admin' }))
-adminRouter.post('/request-code', adminLimiter, requestAdminCode)
-adminRouter.post('/verify-code', adminLimiter, verifyAdminCode)
+adminRouter.post('/login', adminLimiter, adminLogin)
 adminRouter.post('/logout', adminLogout)
 adminRouter.get('/dashboard', adminAuth, getAdminDashboard)
 adminRouter.post('/storefront/initialize', adminAuth, initializeStorefront)

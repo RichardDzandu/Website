@@ -1,6 +1,9 @@
 import jwt from 'jsonwebtoken'
 
 const adminAuth = (req, res, next) => {
+  if (!process.env.JWT_SECRET) {
+    return res.status(503).json({ success: false, message: 'Admin authentication is not configured' })
+  }
   const { adminToken } = req.cookies
 
   if (!adminToken) {

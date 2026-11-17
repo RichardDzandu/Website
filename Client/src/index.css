@@ -100,6 +100,8 @@ nav a:hover, footer a:hover { color: var(--accent); }
 .admin-form { display: grid; gap: 12px; margin-top: 28px; }
 .admin-form input { background: var(--paper); border: 1px solid var(--line); color: var(--ink); padding: 15px; width: 100%; }
 .admin-secondary { background: transparent; color: var(--muted); font-size: 12px; margin-top: 18px; padding: 0; text-decoration: underline; }
+.admin-setup-link { color: var(--muted); display: block; font-size: 10px; margin-top: 8px; opacity: .75; text-decoration: underline; width: fit-content; }
+.admin-setup-link:hover { color: var(--accent); opacity: 1; }
 .admin-message { color: var(--accent) !important; min-height: 24px; }
 .admin-panel-wide { max-width: 1200px; }
 .admin-heading { align-items: start; display: flex; justify-content: space-between; gap: 20px; }
@@ -148,9 +150,15 @@ nav a:hover, footer a:hover { color: var(--accent); }
 .auth-panel h1 { font-size: clamp(42px, 7vw, 72px); margin: 16px 0; }
 .auth-panel > p { color: var(--muted); line-height: 1.7; }
 .auth-form { display: grid; gap: 12px; margin-top: 28px; }
+.auth-form[hidden] { display: none; }
 .auth-form input { background: var(--paper); border: 1px solid var(--line); color: var(--ink); padding: 15px; width: 100%; }
 .auth-message { color: var(--accent) !important; min-height: 24px; }
+.admin-message.is-error, .auth-message.is-error, [data-setup-instructions].is-error, #tracking-result.is-error { color: #b42318 !important; }
 .auth-switch { color: var(--muted); display: inline-block; font-size: 12px; margin-top: 12px; text-decoration: underline; }
+.auth-forgot-link { color: var(--muted); display: inline-block; font-size: 12px; margin-top: 12px; text-decoration: underline; }
+.auth-forgot-link:hover, .auth-switch:hover { color: var(--accent); }
+.admin-login-link { color: var(--muted); display: block; font-size: 10px; margin-top: 8px; opacity: .75; text-decoration: underline; width: fit-content; }
+.admin-login-link:hover { color: var(--accent); opacity: 1; }
 
 footer { background: var(--ink); color: var(--paper); display: grid; gap: 35px; grid-template-columns: 2fr 1fr 1fr; padding: 65px clamp(20px, 8vw, 120px); } footer .brand { display: block; margin-bottom: 15px; } footer b { display: block; margin-bottom: 16px; } footer a:not(.brand) { color: var(--muted); display: block; font-size: 13px; margin: 10px 0; } footer small { border-top: 1px solid var(--line); color: var(--muted); grid-column: 1 / -1; padding-top: 25px; }
 
@@ -169,9 +177,9 @@ footer { background: var(--ink); color: var(--paper); display: grid; gap: 35px; 
   .announcement-bar { align-items: center; background: var(--ink); color: var(--paper); display: flex; font-size: 10px; justify-content: center; gap: 26px; letter-spacing: .06em; min-height: 30px; padding: 6px 16px; }
   .announcement-bar span + span { border-left: 1px solid rgba(255,255,255,.3); padding-left: 26px; }
   .home-header { background: var(--panel); border-bottom: 1px solid var(--line); display: block; padding: 14px clamp(20px, 5vw, 76px) 0; position: relative; }
-  .home-header-main { align-items: center; display: grid; gap: clamp(18px, 4vw, 60px); grid-template-columns: 1fr minmax(220px, 1.25fr) 1fr; min-height: 54px; }
+  .home-header-main { align-items: right; display: grid; gap: clamp(18px, 4vw, 60px); grid-template-columns: minmax(0, 1fr) auto; min-height: 54px; }
   .home-header .brand { font-size: 27px; }
-  .home-search { align-items: center; background: var(--paper); border: 1px solid var(--line); border-radius: 999px; display: flex; height: 42px; overflow: hidden; }
+  .home-search { align-items: center; background: var(--paper); border: 0px solid var(--line); border-radius: 999px; display: flex; height: 42px; overflow: hidden; }
   .home-search input { background: transparent; border: 0; color: var(--ink); flex: 1; min-width: 0; outline: none; padding: 0 17px; }
   .home-search input::placeholder { color: var(--muted); }
   .home-search button { align-self: stretch; background: var(--ink); color: var(--paper); font-size: 27px; line-height: 1; width: 52px; }

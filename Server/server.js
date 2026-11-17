@@ -5,17 +5,16 @@ import cookieParser from "cookie-parser";
 import connectDB from "./config/mongodb.js";
 import authRouter from "./routes/authRoutes.js";
 import userRouter from "./routes/userRoutes.js";
-import https from "https";
 import http from "http";
-import fs from "fs";
+import { fileURLToPath } from "node:url";
 import productRouter from "./routes/productRoutes.js";
 import orderRouter from "./routes/orderRoutes.js";
 import adminRouter from "./routes/adminRoutes.js";
-import { connect } from 'http2';
 
 //Create Express app and HTTP  server
 const app = express();
 const server = http.createServer(app);
+const uploadsDirectory = fileURLToPath(new URL('./uploads/', import.meta.url));
 
 //Middleware setup
 app.use(express.json({ limit: '50mb' }));
@@ -33,6 +32,12 @@ app.use(cors({
   origin: (origin, callback) => callback(null, !origin || allowedOrigins.has(origin)),
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'token']
+}));
+app.use('/uploads', express.static(uploadsDirectory, {
+  dotfiles: 'deny',
+  fallthrough: false,
+  index: false,
+  setHeaders: response => response.setHeader('X-Content-Type-Options', 'nosniff'),
 }));
 
 // API Endpoints

@@ -1,99 +1,168 @@
-import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
+import { randomUUID } from 'node:crypto'
+import userModel from '../models/userModel.js'
+import adminSetupModel from '../models/adminSetupModel.js'
 import orderModel from '../models/orderModel.js'
 import orderAModel from '../models/orderAModel.js'
 import consultModel from '../models/consultationModel.js'
 import productModel from '../models/productsModel.js'
 import siteSettingsModel from '../models/siteSettingsModel.js'
-import cloudinary from '../lib/cloudinary.js'
-import adminOtpModel from '../models/adminOtpModel.js'
-import { sendSms, toGhanaNumber } from '../config/sms.js'
+import { removeUploadedFile, saveImageDataUrl } from '../lib/localUploads.js'
+
+const normalizeLocalNumber = number => {
+  const digits = String(number || '').replace(/\D/g, '')
+  if (digits.length === 10 && digits.startsWith('0')) return digits
+  if (digits.length === 12 && digits.startsWith('233')) return `0${digits.slice(3)}`
+  return null
+}
 
 const allowedNumbers = new Set(
   (process.env.ADMIN_PHONE_NUMBERS || '')
     .split(',')
-    .map(number => number.replace(/\D/g, ''))
+    .map(normalizeLocalNumber)
     .filter(Boolean),
 )
+const allowedAdminEmail = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase()
 
-const codeHash = code => crypto.createHash('sha256').update(code).digest('hex')
-const hashesMatch = (left, right) => {
-  const leftBuffer = Buffer.from(left, 'hex')
-  const rightBuffer = Buffer.from(right, 'hex')
-  return leftBuffer.length === rightBuffer.length && crypto.timingSafeEqual(leftBuffer, rightBuffer)
-}
-const normalizeLocalNumber = number => {
-  const international = toGhanaNumber(number)
-  return international ? `0${international.slice(4)}` : null
-}
+const setAdminCookie = (res, token) => res.cookie('adminToken', token, {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+  maxAge: 8 * 60 * 60 * 1000,
+})
 
-export const requestAdminCode = async (req, res) => {
-  const passwordHash = process.env.ADMIN_PASSWORD_HASH
-  if (!passwordHash) {
-    return res.status(503).json({ success: false, message: 'Admin password is not configured' })
+const setupDocumentId = 'initial-admin'
+const setupClaimDurationMs = 5 * 60 * 1000
+const adminSetupConfigurationMessage = 'Admin setup requires ADMIN_EMAIL, ADMIN_PHONE_NUMBERS, and JWT_SECRET in the backend environment.'
+
+export const getAdminSetupStatus = async (req, res) => {
+  if (!process.env.JWT_SECRET || !allowedAdminEmail || !allowedNumbers.size) {
+    return res.status(503).json({ success: false, message: adminSetupConfigurationMessage })
   }
 
-  const passwordMatches = await bcrypt.compare(String(req.body.password || ''), passwordHash)
+  const [existingAdmin, setupRecord] = await Promise.all([
+    userModel.exists({ isAdmin: true }),
+    adminSetupModel.findById(setupDocumentId).lean(),
+  ])
+  const setupClaimed = setupRecord?.state === 'complete'
+    || (setupRecord?.state === 'pending' && setupRecord.expiresAt?.getTime() > Date.now())
+  return res.json({
+    success: true,
+    available: !existingAdmin && !setupClaimed,
+  })
+}
+
+export const createInitialAdmin = async (req, res) => {
+  if (!process.env.JWT_SECRET || !allowedAdminEmail || !allowedNumbers.size) {
+    return res.status(503).json({ success: false, message: adminSetupConfigurationMessage })
+  }
+
+  const body = req.body || {}
+  const email = String(body.email || '').trim().toLowerCase()
+  const phone = normalizeLocalNumber(body.number)
+  const password = body.password
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email !== allowedAdminEmail || !phone || !allowedNumbers.has(phone)) {
+    return res.status(400).json({ success: false, message: 'Enter a valid email and an authorized phone number' })
+  }
+  if (typeof password !== 'string' || password.length < 12) {
+    return res.status(400).json({ success: false, message: 'Admin password must be at least 12 characters' })
+  }
+  if (await userModel.exists({ isAdmin: true })) {
+    return res.status(409).json({ success: false, message: 'Initial admin setup has already been completed' })
+  }
+
+  const claimId = randomUUID()
+  const claim = {
+    _id: setupDocumentId,
+    state: 'pending',
+    claimId,
+    expiresAt: new Date(Date.now() + setupClaimDurationMs),
+  }
+  try {
+    const existingClaim = await adminSetupModel.findOneAndUpdate(
+      { _id: setupDocumentId, state: 'pending', expiresAt: { $lte: new Date() } },
+      { $set: { claimId, expiresAt: claim.expiresAt } },
+      { new: true },
+    )
+    if (!existingClaim) {
+      try {
+        await adminSetupModel.create(claim)
+      } catch (error) {
+        if (error.code === 11000) {
+          return res.status(409).json({ success: false, message: 'Admin setup is already in progress or complete' })
+        }
+        throw error
+      }
+    }
+
+    if (await userModel.exists({ isAdmin: true })) {
+      await adminSetupModel.updateOne({ _id: setupDocumentId, claimId }, { $set: { state: 'complete' }, $unset: { expiresAt: 1 } })
+      return res.status(409).json({ success: false, message: 'Initial admin setup has already been completed' })
+    }
+
+    const admin = new userModel({
+      name: 'Admin',
+      email,
+      number: phone,
+      password: await bcrypt.hash(password, 12),
+      isAdmin: true,
+      isAccountVerified: true,
+    })
+    await admin.save()
+    await adminSetupModel.updateOne(
+      { _id: setupDocumentId, claimId },
+      { $set: { state: 'complete' }, $unset: { expiresAt: 1 } },
+    )
+    const sessionToken = jwt.sign(
+      { role: 'admin', phone, sub: admin._id.toString() },
+      process.env.JWT_SECRET,
+      { expiresIn: '8h' },
+    )
+    setAdminCookie(res, sessionToken)
+    return res.status(201).json({ success: true, message: 'Admin account created. You can now log in.' })
+  } catch (error) {
+    await adminSetupModel.deleteOne({ _id: setupDocumentId, claimId, state: 'pending' })
+    if (error.code === 11000) {
+      return res.status(409).json({ success: false, message: 'An account with that email already exists' })
+    }
+    console.error('Initial admin setup failed:', error)
+    return res.status(500).json({ success: false, message: 'Could not create the admin account' })
+  }
+}
+
+export const adminLogin = async (req, res) => {
+  if (!process.env.JWT_SECRET) {
+    return res.status(503).json({ success: false, message: 'Admin authentication is not configured' })
+  }
+  const email = String(req.body.email || '').trim().toLowerCase()
+  const password = String(req.body.password || '')
+  if (!email || !password) {
+    return res.status(401).json({ success: false, message: 'Invalid admin credentials' })
+  }
+
+  const admin = await userModel.findOne({ email, isAdmin: true })
+  if (!admin) {
+    if (!await userModel.exists({ isAdmin: true })) {
+      return res.status(503).json({ success: false, message: 'Admin account is not configured' })
+    }
+    return res.status(401).json({ success: false, message: 'Invalid admin credentials' })
+  }
+
+  const localNumber = normalizeLocalNumber(admin.number)
+  if (!localNumber || !allowedNumbers.has(localNumber)) {
+    return res.status(401).json({ success: false, message: 'Invalid admin credentials' })
+  }
+  if (!admin.password) {
+    return res.status(503).json({ success: false, message: 'Admin account is not configured' })
+  }
+  const passwordMatches = await bcrypt.compare(password, admin.password)
   if (!passwordMatches) {
     return res.status(401).json({ success: false, message: 'Invalid admin credentials' })
   }
 
-  const localNumber = normalizeLocalNumber(req.body.number)
-
-  if (!localNumber || !allowedNumbers.has(localNumber)) {
-    return res.status(403).json({ success: false, message: 'This number is not authorized' })
-  }
-
-  const existing = await adminOtpModel.findOne({ phone: localNumber }).lean()
-  if (existing?.lastSentAt && Date.now() - existing.lastSentAt.getTime() < 60 * 1000) {
-    return res.status(429).json({ success: false, message: 'Please wait before requesting another code' })
-  }
-
-  const code = String(crypto.randomInt(100000, 1000000))
-  const challenge = {
-    phone: localNumber,
-    hash: codeHash(code),
-    expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-    attempts: 0,
-    lastSentAt: new Date(),
-  }
-
-  try {
-    await adminOtpModel.findOneAndUpdate({ phone: localNumber }, challenge, { upsert: true, new: true, setDefaultsOnInsert: true })
-    await sendSms(toGhanaNumber(localNumber), `Berry's Closet admin code: ${code}. It expires in 10 minutes.`)
-    return res.json({ success: true, message: 'Verification code sent' })
-  } catch (error) {
-    await adminOtpModel.deleteOne({ phone: localNumber }).catch(() => {})
-    console.error('Admin SMS failed:', error.message)
-    return res.status(503).json({ success: false, message: 'Could not send verification code' })
-  }
-}
-
-export const verifyAdminCode = async (req, res) => {
-  const localNumber = normalizeLocalNumber(req.body.number)
-  const code = String(req.body.code || '')
-  const pending = localNumber && await adminOtpModel.findOne({ phone: localNumber })
-
-  if (!pending || pending.expiresAt.getTime() < Date.now() || pending.attempts >= 5) {
-    return res.status(401).json({ success: false, message: 'Invalid or expired code' })
-  }
-
-  pending.attempts += 1
-  if (!hashesMatch(pending.hash, codeHash(code))) {
-    await pending.save()
-    return res.status(401).json({ success: false, message: 'Invalid or expired code' })
-  }
-
-  await pending.deleteOne()
-  const token = jwt.sign({ role: 'admin', phone: localNumber }, process.env.JWT_SECRET, { expiresIn: '8h' })
-  res.cookie('adminToken', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-    maxAge: 8 * 60 * 60 * 1000,
-  })
-
+  const token = jwt.sign({ role: 'admin', phone: localNumber, sub: admin._id.toString() }, process.env.JWT_SECRET, { expiresIn: '8h' })
+  setAdminCookie(res, token)
   return res.json({ success: true, message: 'Admin access granted' })
 }
 
@@ -143,38 +212,43 @@ export const addLook = async (req, res) => {
   if (!title?.trim() || !/^data:image\/(png|jpe?g|webp);base64,/.test(image || '')) {
     return res.status(400).json({ success: false, message: 'A title and image are required' })
   }
-  const uploaded = await cloudinary.uploader.upload(image, { resource_type: 'image', folder: 'berrys-closet/lookbook' })
-  const settings = await siteSettingsModel.findOneAndUpdate({}, { $push: { looks: { title: title.trim(), description: description || '', image: uploaded.secure_url } }, $set: { lookbookManaged: true } }, { new: true, upsert: true, setDefaultsOnInsert: true })
-  return res.json({ success: true, settings })
+  let imagePath
+  try {
+    imagePath = await saveImageDataUrl(image)
+    const settings = await siteSettingsModel.findOneAndUpdate({}, { $push: { looks: { title: title.trim(), description: description || '', image: imagePath } }, $set: { lookbookManaged: true } }, { new: true, upsert: true, setDefaultsOnInsert: true })
+    return res.json({ success: true, settings })
+  } catch (error) {
+    if (imagePath) {
+      try {
+        await removeUploadedFile(imagePath)
+      } catch (cleanupError) {
+        console.error('Could not clean up failed lookbook photo upload:', cleanupError)
+      }
+    }
+    console.error('Could not save lookbook photo:', error)
+    return res.status(error.statusCode || 500).json({ success: false, message: error.message || 'Could not save lookbook photo' })
+  }
 }
 
 export const deleteLook = async (req, res) => {
   const settings = await siteSettingsModel.findOne()
   const look = settings?.looks.id(req.body.lookId)
   if (!look) return res.status(404).json({ success: false, message: 'Photo not found' })
-  const uploadedPath = new URL(look.image).pathname.split('/upload/')[1] || ''
-  const publicId = uploadedPath.replace(/^v\d+\//, '').replace(/\.[^.]+$/, '')
   settings.looks.id(req.body.lookId).deleteOne()
   settings.lookbookManaged = true
   await settings.save()
-  if (new URL(look.image).hostname === 'res.cloudinary.com' && publicId) {
-    await cloudinary.uploader.destroy(publicId, { resource_type: 'image' })
-  }
+  await removeUploadedFile(look.image)
   return res.json({ success: true, settings })
 }
 
 export const deleteAllLooks = async (req, res) => {
   let settings = await siteSettingsModel.findOne()
   if (!settings) settings = await siteSettingsModel.create({})
-  const publicIds = settings.looks.map(look => {
-    if (!look.image.includes('res.cloudinary.com')) return null
-    const uploadedPath = new URL(look.image).pathname.split('/upload/')[1] || ''
-    return uploadedPath.replace(/^v\d+\//, '').replace(/\.[^.]+$/, '')
-  }).filter(Boolean)
+  const imagePaths = settings.looks.map(look => look.image)
   settings.looks = []
   settings.lookbookManaged = true
   await settings.save()
-  await Promise.all(publicIds.map(publicId => cloudinary.uploader.destroy(publicId, { resource_type: 'image' })))
+  await Promise.all(imagePaths.map(removeUploadedFile))
   return res.json({ success: true })
 }
 
@@ -234,14 +308,9 @@ export const getTrackedOrder = async (req, res) => {
 }
 
 export const deleteAllProducts = async (req, res) => {
-  const products = await productModel.find().select('image').lean()
-  const publicIds = products.map(product => {
-    if (!product.image?.includes('res.cloudinary.com')) return null
-    const uploadedPath = new URL(product.image).pathname.split('/upload/')[1] || ''
-    return uploadedPath.replace(/^v\d+\//, '').replace(/\.[^.]+$/, '')
-  }).filter(Boolean)
+  const products = await productModel.find().select('image video').lean()
   await productModel.deleteMany({})
   await siteSettingsModel.findOneAndUpdate({}, { $set: { catalogManaged: true } }, { new: true, upsert: true, setDefaultsOnInsert: true })
-  await Promise.all(publicIds.map(publicId => cloudinary.uploader.destroy(publicId, { resource_type: 'image' })))
+  await Promise.all(products.flatMap(product => [removeUploadedFile(product.image), removeUploadedFile(product.video)]))
   return res.json({ success: true })
 }

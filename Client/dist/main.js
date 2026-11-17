@@ -62,8 +62,6 @@ const state = {
   service: null,
   modal: null,
   checkout: false,
-  adminNumber: '',
-  adminPassword: '',
   adminData: null,
   adminProducts: [],
   adminSettings: null,
@@ -78,6 +76,10 @@ function getCurrentRoute() {
   const pathname = window.location.pathname.replace(/\/$/, '') || '/'
   if (pathname === '/login') return 'login'
   if (pathname === '/signup') return 'signup'
+  if (pathname === '/admin/setup') return 'admin-setup'
+  if (pathname === '/forgot-password') return 'forgot-password'
+  if (pathname === '/reset-password') return 'reset-password'
+  if (pathname === '/admin') return 'admin-login'
   if (pathname === '/admin/login') return 'admin-login'
   if (pathname === '/admin/dashboard') return 'admin-dashboard'
   if (pathname === '/admin' || pathname.startsWith('/admin/')) return 'admin-blocked'
@@ -271,23 +273,30 @@ function renderItemRequestPage() {
 function renderAdminPage() {
   if (state.adminData) return renderAdminDashboard(state.adminData)
 
-  const isCodeStep = Boolean(state.adminNumber)
   const page = cloneTemplate('admin-login-template').firstElementChild
   const fields = page.querySelector('[data-admin-fields]')
   const form = page.querySelector('form')
-  form.dataset.form = isCodeStep ? 'admin-verify' : 'admin-request'
-  page.querySelector('[data-admin-instructions]').textContent = isCodeStep
-    ? `Enter the code sent to ${state.adminNumber}.`
-    : 'Enter your authorized number and admin password. A one-time code is required every time.'
-  page.querySelector('form button').textContent = isCodeStep ? 'Verify code' : 'Continue to OTP'
-  if (isCodeStep) {
-    fields.append(cloneTemplate('admin-field-code-template'))
-    page.querySelector('[data-action="admin-change-number"]').hidden = false
-  } else {
-    fields.append(cloneTemplate('admin-field-number-template'), cloneTemplate('admin-field-password-template'))
-    page.querySelector('[data-action="admin-change-number"]').hidden = true
-  }
+  form.dataset.form = 'admin-login'
+  page.querySelector('[data-admin-instructions]').textContent = 'Enter your personal admin email and password.'
+  page.querySelector('form button').textContent = 'Log in'
+  fields.append(cloneTemplate('admin-field-email-template'), cloneTemplate('admin-field-password-template'))
   return page
+}
+
+function renderAdminSetupPage() {
+  return cloneTemplate('admin-setup-template')
+}
+
+async function loadAdminSetupStatus() {
+  const response = await fetch('/api/admin/setup-status')
+  let result
+  try {
+    result = await response.json()
+  } catch {
+    throw new Error('Could not read the admin setup service response')
+  }
+  if (!response.ok || !result.success) throw new Error(result.message || 'Could not check admin setup status')
+  return result.available
 }
 
 function renderAdminDashboard(data) {
@@ -404,6 +413,24 @@ function renderAuthPage(mode = 'login') {
   const switchLink = page.querySelector('.auth-switch')
   switchLink.href = `/${isLogin ? 'signup' : 'login'}`
   switchLink.textContent = isLogin ? 'Need an account? Sign up' : 'Already have an account? Log in'
+  page.querySelector('.admin-login-link').hidden = !isLogin
+  page.querySelector('.auth-forgot-link').hidden = !isLogin
+  return page
+}
+
+function renderForgotPasswordPage() {
+  return cloneTemplate('forgot-password-page-template')
+}
+
+function renderResetPasswordPage() {
+  const page = cloneTemplate('reset-password-page-template')
+  const form = page.querySelector('form')
+  const token = new URLSearchParams(window.location.search).get('token') || ''
+  form.elements.token.value = token
+  if (!token) {
+    form.hidden = true
+    setMessage(page.querySelector('#auth-message'), 'This password reset link is missing or invalid. Request a new one.', true)
+  }
   return page
 }
 
@@ -411,14 +438,40 @@ function renderApp() {
   document.documentElement.className = state.theme
   const route = getCurrentRoute()
   const app = document.querySelector('#app')
+  if (route === 'admin-login') {
+    app.replaceChildren(renderAdminPage())
+    updateCartCount()
+    return
+  }
+  if (route === 'admin-setup') {
+    const page = renderAdminSetupPage()
+    app.replaceChildren(page)
+    loadAdminSetupStatus()
+      .then(available => {
+        const form = app.querySelector('[data-form="admin-setup"]')
+        const instructions = app.querySelector('[data-setup-instructions]')
+        form.hidden = !available
+        instructions.textContent = available
+          ? 'Create the first admin account. Setup closes after this account is created.'
+          : 'Initial admin setup is disabled or has already been completed.'
+      })
+      .catch(error => {
+        app.querySelector('[data-form="admin-setup"]').hidden = true
+        const instructions = app.querySelector('[data-setup-instructions]')
+        setMessage(instructions, getErrorMessage(error, 'Could not check admin setup status. Please try again.'))
+        instructions.classList.add('is-error')
+      })
+    updateCartCount()
+    return
+  }
   if (route.startsWith('admin-')) {
     app.replaceChildren(cloneTemplate('checking-admin-template'))
     getAdminSession().then(async result => {
       if (!result.success || result.role !== 'admin') {
         state.adminData = null
-        if (route !== 'admin-login') state.adminNumber = ''
         if (window.location.pathname !== '/admin/login') window.history.replaceState({}, '', '/admin/login')
         app.replaceChildren(renderAdminPage())
+        if (result.message) setMessage(document.querySelector('#admin-message'), result.message, true)
         return
       }
       if (route !== 'admin-dashboard') window.history.replaceState({}, '', '/admin/dashboard')
@@ -428,7 +481,7 @@ function renderApp() {
       if (route !== 'admin-login') window.history.replaceState({}, '', '/admin/login')
       app.replaceChildren(renderAdminPage())
       const message = document.querySelector('#admin-message')
-      if (message) message.textContent = error.message
+      setMessage(message, getErrorMessage(error, 'Could not load the admin dashboard. Please try again.'), true)
     })
     updateCartCount()
     return
@@ -437,9 +490,9 @@ function renderApp() {
     navigateTo('/admin/dashboard')
     return
   }
-  const page = route === 'home' || route === 'collections' || route === 'lookbook' || route === 'services' ? 'home' : route === 'consultation' ? 'item-request' : route === 'admin' ? 'admin' : route === 'login' || route === 'signup' ? route : route === 'cart' ? 'cart' : route
+  const page = route === 'home' || route === 'collections' || route === 'lookbook' || route === 'services' ? 'home' : route === 'consultation' ? 'item-request' : route === 'admin' ? 'admin' : route === 'login' || route === 'signup' || route === 'forgot-password' || route === 'reset-password' ? route : route === 'cart' ? 'cart' : route
 
-  const view = page === 'home' ? renderHomePage() : page === 'cart' ? renderCartPage() : page === 'item-request' ? renderItemRequestPage() : page === 'admin' ? renderAdminPage() : page === 'login' ? renderAuthPage('login') : page === 'signup' ? renderAuthPage('signup') : renderCategoryPage(page)
+  const view = page === 'home' ? renderHomePage() : page === 'cart' ? renderCartPage() : page === 'item-request' ? renderItemRequestPage() : page === 'admin' ? renderAdminPage() : page === 'login' ? renderAuthPage('login') : page === 'signup' ? renderAuthPage('signup') : page === 'forgot-password' ? renderForgotPasswordPage() : page === 'reset-password' ? renderResetPasswordPage() : renderCategoryPage(page)
   app.replaceChildren(view)
   updateCartCount()
 }
@@ -455,6 +508,14 @@ function openModal(content, className = '') {
 }
 function closeModal() { document.querySelector('#modal-root').replaceChildren(); document.body.classList.remove('modal-open'); state.modal = null }
 function addToCart(product) { state.cart.push({ ...product, cartItemId: crypto.randomUUID(), quantity: 1 }); saveCart(); updateCartCount(); closeModal(); notify(`${product.name} added to your bag.`) }
+function getErrorMessage(error, fallback = 'Something went wrong. Please try again.') {
+  return error instanceof Error && error.message.trim() ? error.message : fallback
+}
+function setMessage(element, message, isError = false) {
+  if (!element) return
+  element.textContent = message
+  element.classList.toggle('is-error', isError)
+}
 function notify(message) { const note = document.createElement('div'); note.className = 'toast'; note.textContent = message; document.body.append(note); setTimeout(() => note.remove(), 2800) }
 
 function showProduct(product) {
@@ -521,6 +582,7 @@ function showCheckout() {
 
 async function postOrder(endpoint, payload) { const response = await fetch(`/api/order/${endpoint}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return response.json() }
 async function postAuth(endpoint, payload) { const response = await fetch(`/api/auth/${endpoint}`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return response.json().catch(() => ({ success: false, message: 'Could not reach the authentication service' })) }
+async function putAuth(endpoint, payload) { const response = await fetch(`/api/auth/${endpoint}`, { method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return response.json().catch(() => ({ success: false, message: 'Could not reach the authentication service' })) }
 async function postAdmin(endpoint, payload = {}, method = 'POST') { const response = await fetch(`/api/admin/${endpoint}`, { method, credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); return response.json().catch(() => ({ success: false, message: 'Could not reach the admin service' })) }
 async function getAdminDashboard() { const response = await fetch('/api/admin/dashboard', { credentials: 'include' }); return response.json() }
 async function getAdminSession() { const response = await fetch('/api/admin/session', { credentials: 'include' }); return response.json().catch(() => ({ success: false, message: 'Admin authentication service is unavailable' })) }
@@ -544,6 +606,7 @@ async function loadPublicContent() {
     if (settingsResult.success && (getCurrentRoute() === 'home' || categoryMeta.some(category => category.slug === getCurrentRoute()))) renderApp()
   } catch (error) {
     console.error('Could not load published catalog settings:', error)
+    notify(getErrorMessage(error, 'Could not load the latest store content. Please refresh and try again.'))
   }
 }
 
@@ -609,23 +672,22 @@ document.addEventListener('click', event => {
   if (action === 'look-prev') changeLook(-1)
   if (action === 'look-next') changeLook(1)
   if (action === 'consultation') showConsultation()
-  if (action === 'admin-change-number') { state.adminNumber = ''; state.adminData = null; renderApp() }
-  if (action === 'admin-logout') { postAdmin('logout').finally(() => { state.adminNumber = ''; state.adminPassword = ''; state.adminData = null; state.adminProducts = []; state.adminSettings = null; renderApp() }) }
+  if (action === 'admin-logout') { postAdmin('logout').then(result => { if (!result.success) throw new Error(result.message) }).catch(error => notify(getErrorMessage(error, 'Could not log out. Please try again.'))).finally(() => { state.adminData = null; state.adminProducts = []; state.adminSettings = null; renderApp() }) }
   if (event.target.closest('[data-product-delete]')) {
     if (!window.confirm('Delete this product and its uploaded photo?')) return
-    fetch('/api/product/delete-product', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: event.target.closest('[data-product-delete]').dataset.productDelete }) }).then(response => response.json()).then(async result => { if (!result.success) throw new Error(result.message); await refreshAdmin(); await loadPublicContent(); notify('Product and uploaded photo deleted.') }).catch(error => notify(error.message))
+    fetch('/api/product/delete-product', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: event.target.closest('[data-product-delete]').dataset.productDelete }) }).then(response => response.json()).then(async result => { if (!result.success) throw new Error(result.message); await refreshAdmin(); await loadPublicContent(); notify('Product and uploaded photo deleted.') }).catch(error => notify(getErrorMessage(error, 'Could not delete the product. Please try again.')))
   }
   if (event.target.closest('[data-look-delete]')) {
     if (!window.confirm('Delete this lookbook photo?')) return
-    postAdmin('looks', { lookId: event.target.closest('[data-look-delete]').dataset.lookDelete }, 'DELETE').then(async result => { if (!result.success) throw new Error(result.message); await refreshAdmin(); await loadPublicContent(); renderApp() }).catch(error => notify(error.message))
+    postAdmin('looks', { lookId: event.target.closest('[data-look-delete]').dataset.lookDelete }, 'DELETE').then(async result => { if (!result.success) throw new Error(result.message); await refreshAdmin(); await loadPublicContent(); renderApp() }).catch(error => notify(getErrorMessage(error, 'Could not delete the lookbook photo. Please try again.')))
   }
   if (event.target.closest('[data-clear-looks]')) {
     if (!window.confirm('Delete every lookbook photo? This cannot be undone.')) return
-    postAdmin('looks/clear', {}, 'DELETE').then(async result => { if (!result.success) throw new Error(result.message); await refreshAdmin(); await loadPublicContent(); renderApp() }).catch(error => notify(error.message))
+    postAdmin('looks/clear', {}, 'DELETE').then(async result => { if (!result.success) throw new Error(result.message); await refreshAdmin(); await loadPublicContent(); renderApp() }).catch(error => notify(getErrorMessage(error, 'Could not delete the lookbook photos. Please try again.')))
   }
   if (event.target.closest('[data-clear-products]')) {
     if (!window.confirm('Delete every product and uploaded product photo? This cannot be undone.')) return
-    postAdmin('products/clear', {}, 'DELETE').then(async result => { if (!result.success) throw new Error(result.message); await refreshAdmin(); await loadPublicContent(); notify('All catalog products and uploaded photos deleted.') }).catch(error => notify(error.message))
+    postAdmin('products/clear', {}, 'DELETE').then(async result => { if (!result.success) throw new Error(result.message); await refreshAdmin(); await loadPublicContent(); notify('All catalog products and uploaded photos deleted.') }).catch(error => notify(getErrorMessage(error, 'Could not delete the products. Please try again.')))
   }
   if (action === 'checkout') showCheckout()
   if (action === 'scroll-products') document.querySelector('#product-track').scrollBy({ left: event.target.closest('[data-direction]').dataset.direction === 'left' ? -340 : 340, behavior: 'smooth' })
@@ -637,6 +699,7 @@ document.addEventListener('submit', async event => {
   if (!form.matches('[data-form]')) return
   event.preventDefault()
   const data = Object.fromEntries(new FormData(form))
+  document.querySelectorAll('.auth-message, .admin-message, #tracking-result').forEach(message => setMessage(message, ''))
   try {
     if (form.dataset.form === 'site-search') {
       const query = String(data.query || '').trim().toLowerCase()
@@ -658,22 +721,43 @@ document.addEventListener('submit', async event => {
     }
     if (form.dataset.form === 'login' || form.dataset.form === 'signup') {
       const result = await postAuth(form.dataset.form === 'login' ? 'login' : 'signup', data)
-      if (!result.success) throw new Error(result.message)
+      if (!result.success) {
+        const error = new Error(result.message)
+        error.code = result.code
+        throw error
+      }
       navigateTo('/')
       notify(form.dataset.form === 'login' ? 'Welcome back.' : 'Your account has been created.')
       return
     }
-    if (form.dataset.form === 'admin-request') {
-      const result = await postAdmin('request-code', { number: data.number, password: data.password })
+    if (form.dataset.form === 'forgot-password') {
+      const result = await postAuth('request-password-reset', data)
       if (!result.success) throw new Error(result.message)
-      state.adminNumber = data.number
-      state.adminPassword = ''
-      if (getCurrentRoute() !== 'admin') renderApp()
-      else renderApp()
+      form.hidden = true
+      setMessage(document.querySelector('#auth-message'), result.message)
       return
     }
-    if (form.dataset.form === 'admin-verify') {
-      const result = await postAdmin('verify-code', { number: state.adminNumber, code: data.code })
+    if (form.dataset.form === 'reset-password') {
+      if (data.newPassword !== data.confirmPassword) throw new Error('Passwords do not match')
+      const result = await putAuth('reset-password', { token: data.token, newPassword: data.newPassword })
+      if (!result.success) throw new Error(result.message)
+      navigateTo('/login')
+      notify('Password updated. Please log in with your new password.')
+      return
+    }
+    if (form.dataset.form === 'admin-login') {
+      const result = await postAdmin('login', { email: data.email, password: data.password })
+      if (!result.success) throw new Error(result.message)
+      await loadAdminData()
+      navigateTo('/admin/dashboard')
+      return
+    }
+    if (form.dataset.form === 'admin-setup') {
+      const result = await postAdmin('setup', {
+        number: data.number,
+        email: data.email,
+        password: data.password,
+      })
       if (!result.success) throw new Error(result.message)
       await loadAdminData()
       navigateTo('/admin/dashboard')
@@ -741,21 +825,44 @@ document.addEventListener('submit', async event => {
           },
         },
       }
-      await postOrder('consult', payload)
+      const result = await postOrder('consult', payload)
+      if (!result.success) throw new Error(result.message || 'Could not send your item request')
     }
     closeModal(); notify('Thank you. We will be in touch shortly.')
   } catch (error) {
-    if (form.dataset.form === 'admin-request' || form.dataset.form === 'admin-verify' || form.dataset.form === 'login' || form.dataset.form === 'signup') {
-      const message = document.querySelector('#admin-message')
-      const authMessage = document.querySelector('#auth-message')
-      if (message) message.textContent = error.message
-      if (authMessage) authMessage.textContent = error.message
-      notify(error.message)
+    if (form.dataset.form === 'admin-login' || form.dataset.form === 'admin-setup' || form.dataset.form === 'login' || form.dataset.form === 'signup' || form.dataset.form === 'forgot-password' || form.dataset.form === 'reset-password') {
+      const message = form.dataset.form === 'admin-setup'
+        ? document.querySelector('[data-setup-message]')
+        : form.dataset.form === 'admin-login'
+          ? document.querySelector('#admin-message')
+          : document.querySelector('#auth-message')
+      const fallbacks = {
+        login: 'Could not sign in. Please check your email and password and try again.',
+        signup: 'Could not create your account. Please try again.',
+        'admin-login': 'Could not sign in to the admin account. Please check your details and try again.',
+        'admin-setup': 'Could not create the admin account. Please try again.',
+        'forgot-password': 'Could not request a password reset. Please try again.',
+        'reset-password': 'Could not update your password. Please try again.',
+      }
+      if (form.dataset.form === 'signup' && error.code === 'ACCOUNT_EXISTS') {
+        const forgotLink = document.querySelector('.auth-forgot-link')
+        if (forgotLink) forgotLink.hidden = false
+      }
+      setMessage(message, getErrorMessage(error, fallbacks[form.dataset.form]), true)
       return
     }
-    if (form.dataset.form.startsWith('admin-')) { const message = document.querySelector('#admin-message'); if (message) message.textContent = error.message; else notify(error.message); return }
-    if (form.dataset.form === 'track-order') { const output = document.querySelector('#tracking-result'); if (output) output.textContent = error.message; return }
-    console.error(error); closeModal(); notify('Request saved. We will contact you shortly.')
+    if (form.dataset.form.startsWith('admin-')) {
+      const message = document.querySelector('#admin-message')
+      if (message) setMessage(message, getErrorMessage(error, 'Could not save your changes. Please try again.'), true)
+      else notify(getErrorMessage(error, 'Could not save your changes. Please try again.'))
+      return
+    }
+    if (form.dataset.form === 'track-order') {
+      setMessage(document.querySelector('#tracking-result'), getErrorMessage(error, 'Could not find that order. Please check the tracking number and try again.'), true)
+      return
+    }
+    console.error(error)
+    notify(getErrorMessage(error, 'Could not complete your request. Please try again.'))
   }
 })
 
@@ -767,8 +874,12 @@ document.addEventListener('change', async event => {
     if (!result.success) throw new Error(result.message)
     notify(`Tracking ${result.order.trackingId || result.order._id} updated.`)
   } catch (error) {
-    notify(error.message)
-    await refreshAdmin()
+    notify(getErrorMessage(error, 'Could not update the tracking status. Please try again.'))
+    try {
+      await refreshAdmin()
+    } catch (refreshError) {
+      notify(getErrorMessage(refreshError, 'Could not refresh the admin dashboard. Please reload the page.'))
+    }
   }
 })
 

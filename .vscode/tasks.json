@@ -47,6 +47,35 @@
 			"command": "cd Client; npm run lint",
 			"isBackground": false,
 			"problemMatcher": []
+		},
+		{
+			"label": "Build Client",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"--prefix",
+				"Client",
+				"run",
+				"build"
+			],
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Preview Client",
+			"type": "shell",
+			"command": "npm",
+			"args": [
+				"--prefix",
+				"Client",
+				"run",
+				"dev",
+				"--",
+				"--host",
+				"127.0.0.1"
+			],
+			"isBackground": true,
+			"problemMatcher": []
 		}
 	]
 }
